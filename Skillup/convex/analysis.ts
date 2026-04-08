@@ -82,3 +82,52 @@ export const getAnalysisById = query({
         return analysis;
     },
 });
+export const getLiveProfile = query({
+    args: {},
+    handler: async (ctx) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return null;
+
+        const analysis = await ctx.db
+            .query("analyses")
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+            .order("desc")
+            .first();
+
+        if (!analysis) return null;
+
+        const roadmap = await ctx.db
+            .query("roadmaps")
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+            .filter((q) => q.eq(q.field("analysisId"), analysis._id))
+            .first();
+
+        const acquiredFromRoadmap: string[] = [];
+        if (roadmap) {
+            roadmap.weeks.forEach(week => {
+                if (week.completed) {
+                    const weekSkills = [week.focusSkill, ...(week.skills || [])].map(t => t.toLowerCase());
+                    analysis.missingSkills.forEach(missing => {
+                        const mLower = missing.toLowerCase();
+                        if (weekSkills.some(k => k.includes(mLower) || mLower.includes(k))) {
+                            acquiredFromRoadmap.push(missing);
+                        }
+                    });
+                }
+            });
+        }
+
+        const liveMatchedSkills = [...analysis.matchedSkills, ...acquiredFromRoadmap];
+        const liveMissingSkills = analysis.missingSkills.filter(s => !acquiredFromRoadmap.includes(s));
+        const roadmapBoost = (acquiredFromRoadmap.length / (analysis.missingSkills.length || 1)) * 15;
+        const liveReadinessScore = Math.min(100, Math.round(analysis.readinessScore + roadmapBoost));
+
+        return {
+            ...analysis,
+            readinessScore: liveReadinessScore,
+            matchedSkills: liveMatchedSkills,
+            missingSkills: liveMissingSkills,
+            isLive: acquiredFromRoadmap.length > 0
+        };
+    },
+});

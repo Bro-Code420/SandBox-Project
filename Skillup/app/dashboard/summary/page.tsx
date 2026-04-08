@@ -56,10 +56,10 @@ function SummaryContent() {
   const searchParams = useSearchParams()
   const analysisId = searchParams.get('id') as Id<"analyses"> | null
 
-  const latestAnalysis = useQuery(api.analysis.getLatestAnalysis)
   const specificAnalysis = useQuery(api.analysis.getAnalysisById, analysisId ? { id: analysisId } : "skip")
+  const liveAnalysis = useQuery(api.analysis.getLiveProfile)
 
-  const currentAnalysis = analysisId ? specificAnalysis : latestAnalysis
+  const currentAnalysis = analysisId ? specificAnalysis : liveAnalysis
   const jobRole = useQuery(api.onboarding.getJobRole)
 
   if (currentAnalysis === undefined || jobRole === undefined) {
@@ -157,6 +157,11 @@ RESUME FIT SCORE: ${currentAnalysis.resumeFitScore}/100
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <ScrollText className="w-8 h-8 text-primary" />
           Analysis Summary
+          {(currentAnalysis as any).isLive && (
+            <Badge variant="outline" className="ml-2 border-primary/40 text-primary bg-primary/5 text-[10px] uppercase font-bold tracking-tighter">
+              LIVE PROGRESS ACTIVE
+            </Badge>
+          )}
         </h1>
         <p className="text-muted-foreground mt-1">
           Your complete career readiness report

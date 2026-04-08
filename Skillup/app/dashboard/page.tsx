@@ -52,7 +52,7 @@ function getStatusConfig(status: string) {
 }
 
 export default function DashboardPage() {
-  const currentAnalysis = useQuery(api.analysis.getLatestAnalysis)
+  const currentAnalysis = useQuery(api.analysis.getLiveProfile)
   const jobRole = useQuery(api.onboarding.getJobRole)
 
   if (currentAnalysis === undefined || jobRole === undefined) {
@@ -93,7 +93,14 @@ export default function DashboardPage() {
     <div className="space-y-6 max-w-7xl w-full">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Career Readiness Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+          Career Readiness Dashboard
+          {(currentAnalysis as any).isLive && (
+            <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px] uppercase font-bold tracking-tighter">
+              LIVE PROGRESS ACTIVE
+            </Badge>
+          )}
+        </h1>
         <p className="text-muted-foreground mt-1">
           Role: {currentAnalysis.roleSnapshot.title}
         </p>

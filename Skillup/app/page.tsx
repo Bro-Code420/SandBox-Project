@@ -22,6 +22,7 @@ import { ScrollVelocityContainer, ScrollVelocityRow } from '@/components/ui/scro
 import { PulsatingButton } from '@/components/ui/pulsating-button'
 import NumberTicker from '@/components/dashboard/number-ticker'
 import { TypingAnimation } from '@/components/ui/typing-animation'
+import { CinematicFooter } from '@/components/motion-footer'
 
 import GlareHover from '@/components/ui/glare-hover'
 import LogoLoop from '@/components/LogoLoop'
@@ -338,7 +339,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section className="py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-primary/5 backdrop-blur-3xl" />
@@ -361,23 +361,9 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border/50 py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <BrainCircuit className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">Skillup</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              AI Career Readiness Analyzer - Built with Next.js and shadcn/ui
-            </p>
-          </div>
-        </div>
-      </footer>
+      <CinematicFooter />
     </div>
   )
 }

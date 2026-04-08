@@ -22,7 +22,7 @@ import NumberTicker from '@/components/dashboard/number-ticker'
 import { ComparisonSkeleton } from '@/components/dashboard/comparison-skeleton'
 
 export default function ComparisonPage() {
-  const currentAnalysis = useQuery(api.analysis.getLatestAnalysis)
+  const currentAnalysis = useQuery(api.analysis.getLiveProfile)
   const jobRole = useQuery(api.onboarding.getJobRole)
   const userSkillsData = useQuery(api.onboarding.getUserSkills)
 
@@ -50,12 +50,15 @@ export default function ComparisonPage() {
     )
   }
 
-  const userSkills = userSkillsData.skills
   const allRequiredSkills = [...(jobRole.coreSkills || []), ...(jobRole.bonusSkills || [])]
+  
+  // LIVE SYNC LOGIC: Using values from backend getLiveProfile
+  const realTimeMatchedSkills = currentAnalysis.matchedSkills
+  const realTimeMissingSkills = currentAnalysis.missingSkills
 
-  // Create comparison data
+  // Create comparison items for the table
   const comparisonData = allRequiredSkills.map(skill => {
-    const userHas = userSkills.some(s => s.toLowerCase() === skill.toLowerCase())
+    const userHas = realTimeMatchedSkills.some(s => s.toLowerCase() === skill.toLowerCase())
     const isCore = jobRole.coreSkills?.includes(skill)
     return {
       skill,
@@ -66,7 +69,7 @@ export default function ComparisonPage() {
   })
 
   // Add user skills that are not in required skills
-  userSkills.forEach(skill => {
+  realTimeMatchedSkills.forEach(skill => {
     if (!allRequiredSkills.some(s => s.toLowerCase() === skill.toLowerCase())) {
       comparisonData.push({
         skill,
@@ -77,23 +80,9 @@ export default function ComparisonPage() {
     }
   })
 
-  // REAL-TIME SYNC LOGIC: Compute matched/missing from current state
-  const realTimeMatchedSkills = comparisonData
-    .filter(item => item.userHas && item.industryRequired)
-    .map(item => item.skill)
-    
-  const realTimeMissingSkills = comparisonData
-    .filter(item => !item.userHas && item.industryRequired)
-    .map(item => item.skill)
-
   const matchedCount = realTimeMatchedSkills.length
   const missingCount = realTimeMissingSkills.length
-  
-  // Data Logic: Manual Match Rate Calculation
-  const totalRequired = allRequiredSkills.length
-  const calculatedMatchRate = totalRequired > 0 
-    ? Math.round((matchedCount / totalRequired) * 100) 
-    : (matchedCount > 0 ? 100 : 0)
+  const liveMatchRate = currentAnalysis.readinessScore
 
   return (
     <div className="space-y-6 max-w-7xl w-full">
@@ -141,7 +130,7 @@ export default function ComparisonPage() {
             <Card className="border-primary/30 bg-primary/5 shadow-none flex flex-col justify-center py-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(107,144,128,0.06)] dark:hover:shadow-[0_20px_50px_rgba(164,195,178,0.04)] hover:border-primary/50 cursor-default">
               <CardContent className="p-6 text-center">
                 <div className="text-5xl font-black text-primary mb-2 flex items-center justify-center">
-                  <NumberTicker value={calculatedMatchRate} delay={0.4} />
+                  <NumberTicker value={liveMatchRate} delay={0.4} />
                   <span>%</span>
                 </div>
                 <p className="text-sm font-black text-foreground dark:text-primary/70 uppercase tracking-widest text-[10px]">Match Rate</p>

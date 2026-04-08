@@ -16,6 +16,7 @@ import {
   Layers,
   BarChart,
   Cloud,
+  ChevronLeft,
   ChevronRight,
   Briefcase,
   GraduationCap,

@@ -82,7 +82,38 @@ export const getLeaderboard = query({
             }
         }
 
-        // INSTRUCTION 2: RANK USERS
+        // INSTRUCTION 2: ROADMAP-AWARE REAL-TIME PROGRESS
+        const roadmap = await ctx.db
+            .query("roadmaps")
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+            .filter((q) => q.eq(q.field("analysisId"), currentAnalysis._id))
+            .first();
+
+        const acquiredFromRoadmap: string[] = [];
+        if (roadmap) {
+            roadmap.weeks.forEach(week => {
+                if (week.completed) {
+                    // Extract keywords from focusSkill and skills array
+                    const weekSkills = [week.focusSkill, ...(week.skills || [])].map(t => t.toLowerCase());
+                    currentAnalysis.missingSkills.forEach(missing => {
+                        const mLower = missing.toLowerCase();
+                        if (weekSkills.some(k => k.includes(mLower) || mLower.includes(k))) {
+                            acquiredFromRoadmap.push(missing);
+                        }
+                    });
+                }
+            });
+        }
+
+        // Apply "Live" updates to current user in results
+        const userInResults = results.find(r => r.is_current);
+        if (userInResults) {
+            const roadmapBoost = (acquiredFromRoadmap.length / (currentAnalysis.missingSkills.length || 1)) * 15;
+            userInResults.readiness_score = Math.min(100, Math.round(currentAnalysis.readinessScore + roadmapBoost));
+            userInResults.skills = [...currentAnalysis.matchedSkills, ...acquiredFromRoadmap];
+        }
+
+        // INSTRUCTION 3: RANK USERS
         const leaderboard = [...results]
             .sort((a, b) => b.readiness_score - a.readiness_score)
             .map((u, i) => ({
@@ -93,11 +124,11 @@ export const getLeaderboard = query({
                 skills: u.skills
             }));
 
-        // INSTRUCTION 3: IDENTIFY CURRENT USER POSITION
+        // INSTRUCTION 4: IDENTIFY CURRENT USER POSITION
         const currentUserPosition = leaderboard.find(u => u.is_current);
         if (!currentUserPosition) return null;
 
-        // INSTRUCTION 4: CALCULATE PERCENTILE
+        // INSTRUCTION 5: CALCULATE PERCENTILE
         const totalUsers = leaderboard.length;
         const usersBelow = leaderboard.length - currentUserPosition.rank;
         const percentile = totalUsers > 1 ? (usersBelow / (totalUsers - 1)) * 100 : 100;
