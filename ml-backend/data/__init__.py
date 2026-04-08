@@ -10,7 +10,6 @@ from .role_definitions import (
     list_available_roles,
 )
 from .learning_resources import (
-    LEARNING_RESOURCES,
     get_resources_for_skill,
     get_resources_for_skills,
 )

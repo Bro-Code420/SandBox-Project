@@ -141,12 +141,14 @@ def get_priority_recommendations(
     recommendations = []
     total_resources = 0
     
-    for gap in sorted_gaps:
+    for i, gap in enumerate(sorted_gaps):
         if total_resources >= max_total_resources:
             break
         
         skill = gap.get("skill", "")
-        resources = get_resources_for_skill(skill, max_resources=2)
+        # Only perform heavy 1-2s Web/Youtube search for the top 4 skills to satisfy the 4-week bounds efficiently
+        heavy = i < 4
+        resources = get_resources_for_skill(skill, max_resources=2, perform_heavy_search=heavy)
         
         recommendations.append({
             "skill": skill,

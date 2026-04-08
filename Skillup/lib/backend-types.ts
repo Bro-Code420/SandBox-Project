@@ -32,6 +32,7 @@ export interface MLLearningResource {
   url: string
   difficulty: string
   duration_hours: number
+  reason?: string | null
 }
 
 export interface MLSkillRecommendation {
@@ -169,50 +170,62 @@ export function mapBackendToAnalysisResult(
 
 /**
  * Map backend roadmap to frontend WeekPlan
+ * Preserves all skills per week for resource matching
  */
-export function mapBackendToRoadmap(roadmap: MLRoadmapWeek[]): WeekPlan[] {
+export function mapBackendToRoadmap(roadmap: MLRoadmapWeek[]): (WeekPlan & { _allSkills?: string[] })[] {
   return roadmap.map(week => ({
     weekNumber: week.week,
-    focusSkill: week.focus,
-    courses: [],  // Will be populated by recommendations
-    youtubePlaylists: [],  // Will be populated by recommendations
+    focusSkill: week.focus || week.skills[0] || 'Review & Practice',
+    _allSkills: week.skills,  // carry through for enrichment
+    courses: [],
+    youtubePlaylists: [],
   }))
 }
 
 /**
  * Map backend recommendations to frontend format
- * Merges recommendations into roadmap weeks
+ * Merges recommendations for ALL skills in each week (not just focusSkill)
  */
 export function enrichRoadmapWithRecommendations(
-  weeks: WeekPlan[],
+  weeks: (WeekPlan & { _allSkills?: string[] })[],
   recommendations: MLSkillRecommendation[]
 ): WeekPlan[] {
   const recMap = new Map(recommendations.map(r => [r.skill.toLowerCase(), r]))
 
   return weeks.map(week => {
-    const skillKey = week.focusSkill.toLowerCase()
-    const rec = recMap.get(skillKey)
+    const allSkills = week._allSkills || [week.focusSkill]
 
-    if (!rec) return week
+    const courses: WeekPlan['courses'] = []
+    const youtubePlaylists: WeekPlan['youtubePlaylists'] = []
 
-    return {
-      ...week,
-      courses: rec.resources
+    for (const skill of allSkills) {
+      const rec = recMap.get(skill.toLowerCase())
+      if (!rec) continue
+
+      rec.resources
         .filter(r => r.type === 'course')
-        .map(r => ({
+        .forEach(r => courses.push({
           title: r.title,
           platform: r.provider || 'Online Platform',
           url: r.url || `https://www.google.com/search?q=${encodeURIComponent(r.title)}`,
           duration: `${r.duration_hours || 10} hours`,
-        })),
-      youtubePlaylists: rec.resources
+          reason: r.reason || undefined,
+        }))
+
+      rec.resources
         .filter(r => r.type === 'youtube')
-        .map(r => ({
+        .forEach(r => youtubePlaylists.push({
           title: r.title,
           channel: r.channel || 'YouTube',
           url: r.url || `https://www.youtube.com/results?search_query=${encodeURIComponent(r.title)}`,
           videos: Math.ceil((r.duration_hours || 1) * 2),
-        })),
+          reason: r.reason || undefined,
+        }))
     }
+
+    // Strip internal _allSkills field, return clean WeekPlan
+    const { _allSkills, ...cleanWeek } = week
+    return { ...cleanWeek, courses, youtubePlaylists }
   })
 }
+

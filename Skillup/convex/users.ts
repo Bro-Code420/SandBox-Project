@@ -49,7 +49,7 @@ export const getProfile = query({
 
         // Auto-reset logic if it's a new day
         const now = Date.now();
-        const lastReset = new Date(user.lastCreditReset);
+        const lastReset = new Date(user.lastCreditReset ?? 0);
         const today = new Date(now);
         
         if (lastReset.toDateString() !== today.toDateString() && user.membership === "free") {
@@ -80,10 +80,10 @@ export const useCredit = mutation({
         if (!user) throw new Error("User not found");
         
         if (user.membership === "free") {
-            if (user.credits <= 0) {
+            if ((user.credits ?? 0) <= 0) {
                 // Check if we should reset
                 const now = Date.now();
-                const lastReset = new Date(user.lastCreditReset);
+                const lastReset = new Date(user.lastCreditReset ?? 0);
                 if (lastReset.toDateString() !== new Date(now).toDateString()) {
                     await ctx.db.patch(user._id, {
                         credits: DAILY_FREE_CREDITS - 1,
@@ -95,7 +95,7 @@ export const useCredit = mutation({
             }
 
             await ctx.db.patch(user._id, {
-                credits: user.credits - 1,
+                credits: (user.credits ?? 0) - 1,
             });
         }
         

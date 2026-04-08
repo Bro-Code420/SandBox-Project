@@ -58,7 +58,7 @@ export default function AnalyzePage() {
     if (analysisStarted.current) return
 
     // Credit logic enforcement
-    if (userProfile?.membership === 'free' && userProfile.credits <= 0) {
+    if (userProfile?.membership === 'free' && (userProfile?.credits ?? 0) <= 0) {
       setError("You've used all your free credits for today. Upgrade to Pro for unlimited daily analysis!")
       // Auto-redirect to membership after 3 seconds
       setTimeout(() => {
@@ -181,24 +181,85 @@ export default function AnalyzePage() {
         scoreBreakdown,
       })
 
-      // Simple roadmap generation for fallback
-      const weeks = []
-      const missingSkillsList = [...missingCore, ...missingBonus]
-      const skillsPerWeek = Math.ceil(missingSkillsList.length / 4)
-
-      for (let i = 0; i < 4; i++) {
-        const weekSkills = missingSkillsList.slice(i * skillsPerWeek, (i + 1) * skillsPerWeek)
-        weeks.push({
-          weekNumber: i + 1,
-          focusSkill: weekSkills[0] || 'Review & Practice',
-          courses: [],
-          youtubePlaylists: [],
-        })
+      // Smart roadmap generation for fallback
+      // Curated fallback resources for common skills
+      const FALLBACK_RESOURCES: Record<string, { courses: { title: string; platform: string; url: string; duration: string; reason?: string }[]; playlists: { title: string; channel: string; url: string; videos: number; reason?: string }[] }> = {
+        'react': {
+          courses: [{ title: 'React - The Complete Guide', platform: 'Udemy', url: 'https://www.udemy.com/course/react-the-complete-guide-incl-redux/', duration: '48 hours' }],
+          playlists: [{ title: 'React JS Full Course', channel: 'freeCodeCamp', url: 'https://www.youtube.com/watch?v=bMknfKXIFA8', videos: 12 }],
+        },
+        'javascript': {
+          courses: [{ title: 'JavaScript: Understanding the Weird Parts', platform: 'Udemy', url: 'https://www.udemy.com/course/understand-javascript/', duration: '12 hours' }],
+          playlists: [{ title: 'JavaScript Full Course', channel: 'freeCodeCamp', url: 'https://www.youtube.com/watch?v=PkZNo7MFNFg', videos: 6 }],
+        },
+        'typescript': {
+          courses: [{ title: 'Understanding TypeScript', platform: 'Udemy', url: 'https://www.udemy.com/course/understanding-typescript/', duration: '15 hours' }],
+          playlists: [{ title: 'TypeScript Tutorial', channel: 'Academind', url: 'https://www.youtube.com/watch?v=BwuLxPH8IDs', videos: 6 }],
+        },
+        'python': {
+          courses: [{ title: 'Python for Everybody', platform: 'Coursera', url: 'https://www.coursera.org/specializations/python', duration: '40 hours' }],
+          playlists: [{ title: 'Python Tutorial for Beginners', channel: 'Programming with Mosh', url: 'https://www.youtube.com/watch?v=_uQrJ0TkZlc', videos: 12 }],
+        },
+        'node.js': {
+          courses: [{ title: 'The Complete Node.js Developer Course', platform: 'Udemy', url: 'https://www.udemy.com/course/the-complete-nodejs-developer-course-2/', duration: '35 hours' }],
+          playlists: [{ title: 'Node.js Tutorial', channel: 'Programming with Mosh', url: 'https://www.youtube.com/watch?v=TlB_eWDSMt4', videos: 4 }],
+        },
+        'sql': {
+          courses: [{ title: 'The Complete SQL Bootcamp', platform: 'Udemy', url: 'https://www.udemy.com/course/the-complete-sql-bootcamp/', duration: '9 hours' }],
+          playlists: [{ title: 'SQL Tutorial - Full Course', channel: 'freeCodeCamp', url: 'https://www.youtube.com/watch?v=HXV3zeQKqGY', videos: 8 }],
+        },
+        'docker': {
+          courses: [{ title: 'Docker Mastery', platform: 'Udemy', url: 'https://www.udemy.com/course/docker-mastery/', duration: '20 hours' }],
+          playlists: [{ title: 'Docker Tutorial', channel: 'TechWorld with Nana', url: 'https://www.youtube.com/watch?v=3c-iBn73dDE', videos: 6 }],
+        },
+        'git': {
+          courses: [{ title: 'Git Complete', platform: 'Udemy', url: 'https://www.udemy.com/course/git-complete/', duration: '6 hours' }],
+          playlists: [{ title: 'Git and GitHub for Beginners', channel: 'freeCodeCamp', url: 'https://www.youtube.com/watch?v=RGOj5yH7evk', videos: 2 }],
+        },
       }
+
+      const missingSkillsList = [...missingCore, ...missingBonus]
+      const weekCount = Math.min(4, Math.max(1, missingSkillsList.length))
+      const weeks: { weekNumber: number; focusSkill: string; _skills: string[]; courses: (typeof FALLBACK_RESOURCES[string]['courses'][0])[]; youtubePlaylists: (typeof FALLBACK_RESOURCES[string]['playlists'][0])[] }[] = Array.from({ length: weekCount }, (_, i) => ({
+        weekNumber: i + 1,
+        focusSkill: '',
+        _skills: [] as string[],
+        courses: [] as typeof FALLBACK_RESOURCES[string]['courses'],
+        youtubePlaylists: [] as typeof FALLBACK_RESOURCES[string]['playlists'],
+      }))
+
+      // Round-robin distribution
+      missingSkillsList.forEach((skill, idx) => {
+        weeks[idx % weekCount]._skills.push(skill)
+      })
+
+      // Populate focusSkill and resources
+      weeks.forEach(week => {
+        week.focusSkill = week._skills[0] || 'Consolidation & Projects'
+        week._skills.forEach(skill => {
+          const res = FALLBACK_RESOURCES[skill.toLowerCase()]
+          if (res) {
+            week.courses.push(...res.courses)
+            week.youtubePlaylists.push(...res.playlists)
+          } else {
+            // Generate a search-based fallback resource
+            week.courses.push({
+              title: `Learn ${skill}`,
+              platform: 'Google',
+              url: `https://www.google.com/search?q=learn+${encodeURIComponent(skill)}`,
+              duration: '10 hours',
+              reason: 'Dynamic resource for specific skill gap.',
+            })
+          }
+        })
+      })
+
+      // Convert to Convex-compatible format (remove _skills helper)
+      const cleanWeeks = weeks.map(({ _skills, ...w }) => w)
 
       await saveRoadmap({
         analysisId,
-        weeks,
+        weeks: cleanWeeks,
       })
 
       // Consume credit in fallback too

@@ -15,7 +15,7 @@ import numpy as np
 from app.models.readiness_model import ReadinessModel
 from app.services.resume_parser import extract_skills_from_text, merge_skills
 from app.services.role_intelligence import RoleIntelligence, get_role_intelligence
-from app.services.recommendation_service import get_skill_recommendations, get_learning_roadmap
+from app.services.recommendation_service import get_priority_recommendations, get_learning_roadmap
 from app.core.startup import get_model, is_model_loaded
 from data.skill_dependencies import topological_sort, SKILL_DEPENDENCIES
 from data.role_definitions import SKILL_WEIGHTS
@@ -364,11 +364,11 @@ def run_pipeline(
         skill_analysis["core_coverage"]
     )
     
-    # Step 5: Get recommendations for missing skills
-    missing_skill_names = [s["skill"] for s in skill_analysis["missing_skills"]]
-    recommendations = get_skill_recommendations(missing_skill_names)
+    # Step 5: Get recommendations for missing skills (prioritized heavy search)
+    recommendations = get_priority_recommendations(skill_analysis["missing_skills"])
     
     # Step 6: Generate 30-day roadmap
+    missing_skill_names = [s["skill"] for s in skill_analysis["missing_skills"]]
     roadmap = get_learning_roadmap(missing_skill_names, weeks=4)
     
     # Build response

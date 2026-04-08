@@ -5,10 +5,10 @@ export default defineSchema({
     user_profiles: defineTable({
         userId: v.string(),
         email: v.string(),
-        credits: v.number(),
-        lastCreditReset: v.number(),
-        membership: v.union(v.literal("free"), v.literal("pro"), v.literal("elite")),
-        createdAt: v.number(),
+        credits: v.optional(v.number()),
+        lastCreditReset: v.optional(v.number()),
+        membership: v.optional(v.union(v.literal("free"), v.literal("pro"), v.literal("elite"))),
+        createdAt: v.any(),
     }).index("by_userId", ["userId"]),
 
     job_role_selections: defineTable({
@@ -53,7 +53,7 @@ export default defineSchema({
             experienceFactor: v.number(),
         })),
         resumeText: v.optional(v.string()),
-        createdAt: v.number(),
+        createdAt: v.any(),
     }).index("by_userId", ["userId"]),
 
     roadmaps: defineTable({
@@ -68,12 +68,14 @@ export default defineSchema({
                 platform: v.string(),
                 url: v.string(),
                 duration: v.string(),
+                reason: v.optional(v.string()),
             })),
             youtubePlaylists: v.array(v.object({
                 title: v.string(),
                 channel: v.string(),
                 url: v.string(),
                 videos: v.number(),
+                reason: v.optional(v.string()),
             })),
         })),
     }).index("by_userId", ["userId"]),

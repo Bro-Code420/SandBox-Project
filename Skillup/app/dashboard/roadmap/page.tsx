@@ -55,10 +55,10 @@ export default function RoadmapPage() {
       <div>
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Map className="w-8 h-8 text-primary" />
-          30-Day Learning Roadmap
+          {roadmap.length * 7}-Day Learning Roadmap
         </h1>
         <p className="text-muted-foreground mt-1">
-          Your personalized path to becoming {currentAnalysis.roleSnapshot.title}
+          Your personalized {roadmap.length}-week path to becoming {currentAnalysis.roleSnapshot.title}
         </p>
       </div>
 
@@ -94,7 +94,7 @@ export default function RoadmapPage() {
 
       {/* Weekly Tabs */}
       <Tabs defaultValue="week-1">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className={`grid w-full ${roadmap.length === 1 ? 'grid-cols-1' : roadmap.length === 2 ? 'grid-cols-2' : roadmap.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
           {roadmap.map((week) => (
             <TabsTrigger key={week.weekNumber} value={`week-${week.weekNumber}`}>
               Week {week.weekNumber}
@@ -147,6 +147,11 @@ export default function RoadmapPage() {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-foreground">{course.title}</h4>
                           <p className="text-sm text-muted-foreground">{course.platform}</p>
+                          {course.reason && (
+                            <p className="text-xs text-muted-foreground italic mt-1 leading-relaxed">
+                              {course.reason}
+                            </p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Timer className="w-4 h-4" />
@@ -190,6 +195,11 @@ export default function RoadmapPage() {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-foreground">{playlist.title}</h4>
                           <p className="text-sm text-muted-foreground">{playlist.channel}</p>
+                          {playlist.reason && (
+                            <p className="text-xs text-muted-foreground italic mt-1 leading-relaxed">
+                              {playlist.reason}
+                            </p>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {playlist.videos} videos
@@ -212,7 +222,7 @@ export default function RoadmapPage() {
       {/* Timeline Overview */}
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-lg">30-Day Timeline</CardTitle>
+          <CardTitle className="text-lg">{roadmap.length * 7}-Day Timeline</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="relative">

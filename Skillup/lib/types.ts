@@ -63,12 +63,14 @@ export interface WeekPlan {
     platform: string
     url: string
     duration: string
+    reason?: string
   }[]
   youtubePlaylists: {
     title: string
     channel: string
     url: string
     videos: number
+    reason?: string
   }[]
 }
 

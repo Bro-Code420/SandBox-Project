@@ -186,44 +186,66 @@ def topological_sort(skills: List[str]) -> List[str]:
 
 
 def generate_learning_roadmap(skills: List[str], weeks: int = 4) -> List[Dict]:
-    """Generate a week-wise learning roadmap for given skills."""
+    """Generate a week-wise learning roadmap for given skills.
+    
+    Returns between 1 and `weeks` entries based on actual content.
+    If there are more bins than `weeks`, overflow is merged into the last week.
+    If there are fewer skills than `weeks`, only the needed weeks are returned.
+    """
+    if not skills:
+        return []
+    
     sorted_skills = topological_sort(skills)
     
-    # Calculate total hours
+    # Calculate total hours and target hours per week
     total_hours = sum(get_learning_hours(s) for s in sorted_skills)
-    hours_per_week = total_hours / weeks if weeks > 0 else total_hours
+    # Use the requested number of weeks but don't create more weeks than skills
+    effective_weeks = min(weeks, len(sorted_skills))
+    hours_per_week = total_hours / effective_weeks if effective_weeks > 0 else total_hours
     
     roadmap = []
-    current_week = 1
     week_hours = 0
     week_skills = []
     
     for skill in sorted_skills:
         skill_hours = get_learning_hours(skill)
         
-        # Check if adding this skill exceeds week capacity
-        if week_hours + skill_hours > hours_per_week * 1.3 and week_skills:
+        # Check if adding this skill exceeds week capacity AND we haven't hit the max
+        if (week_hours + skill_hours > hours_per_week * 1.3 
+                and week_skills 
+                and len(roadmap) < effective_weeks - 1):
             # Save current week
             roadmap.append({
-                "week": current_week,
+                "week": len(roadmap) + 1,
                 "skills": week_skills,
                 "estimated_hours": week_hours,
-                "focus": week_skills[0] if week_skills else "",
+                "focus": week_skills[0],
             })
-            current_week += 1
             week_hours = 0
             week_skills = []
         
         week_skills.append(skill)
         week_hours += skill_hours
     
-    # Add remaining skills
+    # Add remaining skills as the final week
     if week_skills:
         roadmap.append({
-            "week": current_week,
+            "week": len(roadmap) + 1,
             "skills": week_skills,
             "estimated_hours": week_hours,
-            "focus": week_skills[0] if week_skills else "",
+            "focus": week_skills[0],
         })
+    
+    # Safety: if somehow we exceeded max weeks, merge everything beyond `weeks` into the last
+    if len(roadmap) > weeks:
+        merged = roadmap[:weeks]
+        for overflow in roadmap[weeks:]:
+            merged[-1]["skills"].extend(overflow["skills"])
+            merged[-1]["estimated_hours"] += overflow["estimated_hours"]
+        roadmap = merged
+    
+    # Renumber weeks sequentially
+    for i, entry in enumerate(roadmap):
+        entry["week"] = i + 1
     
     return roadmap
