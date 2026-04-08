@@ -29,7 +29,7 @@ import LogoLoop from '@/components/LogoLoop'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <header className="border-b border-primary/10 backdrop-blur-md bg-background/80 sticky top-0 z-50 transition-all shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -252,7 +252,7 @@ export default function LandingPage() {
       </section>
 
         {/* Logo Loop Section */}
-        <div className="py-20 border-y border-primary/10">
+        <div className="py-20 border-y border-primary/10 overflow-hidden">
           <div className="container mx-auto px-4 text-center mb-10">
             <p className="text-sm font-bold text-muted-foreground/50 uppercase tracking-[0.3em]">
               Trusted Analysis for Global Standards
