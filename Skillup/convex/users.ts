@@ -102,3 +102,26 @@ export const useCredit = mutation({
         return true;
     }
 });
+
+export const updateMembership = mutation({
+    args: { plan: v.union(v.literal("free"), v.literal("pro"), v.literal("elite")) },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) throw new Error("Auth required");
+
+        const user = await ctx.db
+            .query("user_profiles")
+            .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+            .unique();
+
+        if (!user) throw new Error("User not found");
+
+        await ctx.db.patch(user._id, {
+            membership: args.plan,
+            credits: 3, // Reset credits on upgrade as requested
+            lastCreditReset: Date.now(),
+        });
+
+        return true;
+    }
+});

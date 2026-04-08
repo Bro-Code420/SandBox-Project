@@ -10,6 +10,22 @@ import { api } from '@/convex/_generated/api'
 export default function MembershipPage() {
   const userProfile = useQuery(api.users.getProfile)
   
+  const updateMembership = useMutation(api.users.updateMembership)
+  const [loadingPlan, setLoadingPlan] = React.useState<string | null>(null)
+
+  const handleUpgrade = async (plan: string) => {
+    try {
+      setLoadingPlan(plan)
+      // Small delay for "premium" feel
+      await new Promise(resolve => setTimeout(resolve, 800))
+      await updateMembership({ plan: plan.toLowerCase() as any })
+    } catch (err) {
+      console.error("Upgrade failed:", err)
+    } finally {
+      setLoadingPlan(null)
+    }
+  }
+
   const plans = [
     {
       name: 'Free',
@@ -22,7 +38,7 @@ export default function MembershipPage() {
         'Community support'
       ],
       buttonText: 'Current Plan',
-      isCurrent: userProfile?.membership === 'free',
+      isCurrent: userProfile?.membership === 'free' || !userProfile?.membership,
       icon: <Star className="w-6 h-6 text-muted-foreground" />,
       color: 'border-border'
     },
@@ -124,14 +140,15 @@ export default function MembershipPage() {
             </ul>
 
             <Button 
-              disabled={plan.isCurrent}
+              disabled={plan.isCurrent || (loadingPlan !== null)}
+              onClick={() => handleUpgrade(plan.name)}
               className={`w-full h-12 text-base font-bold rounded-xl transition-all ${
                 plan.highlight 
                   ? 'bg-primary text-primary-foreground hover:scale-[1.02] shadow-xl' 
                   : 'bg-transparent border-2 border-primary/20 text-foreground hover:bg-muted hover:border-primary/40'
               } ${plan.isCurrent ? 'opacity-50 grayscale cursor-not-allowed border-muted-foreground/30' : ''}`}
             >
-              {plan.isCurrent ? 'Current Plan' : plan.buttonText}
+              {loadingPlan === plan.name ? 'Activating...' : plan.isCurrent ? 'Current Plan' : plan.buttonText}
             </Button>
           </motion.div>
         ))}
