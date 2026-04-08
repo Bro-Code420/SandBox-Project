@@ -20,8 +20,11 @@ import {
   Briefcase,
   GraduationCap,
   Building2,
-  Rocket
+  Rocket,
+  Sparkles,
+  Target
 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 import { jobDomains } from '@/lib/data'
 import type { RoleLevel, EmploymentType } from '@/lib/types'
 
@@ -55,6 +58,7 @@ export default function RoleSelectionPage() {
   const [selectedDomain, setSelectedDomain] = useState<string>('')
   const [selectedLevel, setSelectedLevel] = useState<RoleLevel | ''>('')
   const [selectedEmployment, setSelectedEmployment] = useState<EmploymentType>('full-time')
+  const [targetJD, setTargetJD] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -62,6 +66,7 @@ export default function RoleSelectionPage() {
       setSelectedDomain(existingJobRole.domain)
       setSelectedLevel(existingJobRole.roleLevel as RoleLevel)
       setSelectedEmployment(existingJobRole.employmentType as EmploymentType)
+      setTargetJD(existingJobRole.targetJobDescription || '')
     }
   }, [existingJobRole])
 
@@ -83,6 +88,7 @@ export default function RoleSelectionPage() {
         responsibilities: selectedRoleConfig.responsibilities,
         coreSkills: selectedRoleConfig.coreSkills,
         bonusSkills: selectedRoleConfig.bonusSkills,
+        targetJobDescription: targetJD || undefined,
       })
       router.push('/onboarding/skills')
     } catch (error) {
@@ -96,6 +102,19 @@ export default function RoleSelectionPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* Header with Back Button */}
+      <div className="flex items-center justify-between mb-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/dashboard')}
+          className="gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Button>
+      </div>
+
       {/* Progress */}
       <div className="mb-8">
         <div className="flex items-center justify-between text-sm mb-2">
@@ -192,6 +211,29 @@ export default function RoleSelectionPage() {
             </div>
           ))}
         </RadioGroup>
+      </div>
+
+      {/* Job Description (NEW) */}
+      <div className="mb-8 p-6 rounded-2xl bg-primary/5 border border-primary/20 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Target className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <Label className="text-lg font-bold block">Target Job Description (Optional)</Label>
+            <p className="text-xs text-muted-foreground">Paste a specific job posting to rank yourself against its exact requirements</p>
+          </div>
+        </div>
+        <Textarea 
+          placeholder="Paste the job responsibilities, requirements, and tech stack here..."
+          className="min-h-[150px] bg-background/50 border-primary/20 focus:border-primary transition-all resize-none"
+          value={targetJD}
+          onChange={(e) => setTargetJD(e.target.value)}
+        />
+        <div className="flex items-center gap-2 text-[10px] font-bold text-primary/70 uppercase tracking-widest">
+           <Sparkles className="w-3 h-3" />
+           AI will extract requirements automatically
+        </div>
       </div>
 
       {/* Role Preview */}

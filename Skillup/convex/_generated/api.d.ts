@@ -10,7 +10,9 @@
 
 import type * as analysis from "../analysis.js";
 import type * as onboarding from "../onboarding.js";
+import type * as ranking from "../ranking.js";
 import type * as roadmap from "../roadmap.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
 import type {
@@ -22,7 +24,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   analysis: typeof analysis;
   onboarding: typeof onboarding;
+  ranking: typeof ranking;
   roadmap: typeof roadmap;
+  seed: typeof seed;
   users: typeof users;
 }>;
 

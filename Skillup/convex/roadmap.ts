@@ -57,3 +57,21 @@ export const getLatestRoadmap = query({
             .first();
     },
 });
+
+export const toggleWeekCompletion = mutation({
+    args: { roadmapId: v.id("roadmaps"), weekNumber: v.number() },
+    handler: async (ctx, args) => {
+        const roadmap = await ctx.db.get(args.roadmapId);
+        if (!roadmap) throw new Error("Roadmap not found");
+
+        const newWeeks = roadmap.weeks.map((w) => {
+            if (w.weekNumber === args.weekNumber) {
+                return { ...w, completed: !w.completed };
+            }
+            return w;
+        });
+
+        await ctx.db.patch(args.roadmapId, { weeks: newWeeks });
+        return true;
+    },
+});

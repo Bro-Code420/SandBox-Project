@@ -10,6 +10,7 @@ export const saveJobRole = mutation({
         responsibilities: v.array(v.string()),
         coreSkills: v.array(v.string()),
         bonusSkills: v.array(v.string()),
+        targetJobDescription: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const identity = await ctx.auth.getUserIdentity();

@@ -20,6 +20,7 @@ export default defineSchema({
         responsibilities: v.array(v.string()),
         coreSkills: v.array(v.string()),
         bonusSkills: v.array(v.string()),
+        targetJobDescription: v.optional(v.string()),
     }).index("by_userId", ["userId"]),
 
     user_skills: defineTable({
@@ -81,6 +82,7 @@ export default defineSchema({
                 videos: v.number(),
                 reason: v.optional(v.string()),
             })),
+            completed: v.optional(v.boolean()),
         })),
     }).index("by_userId", ["userId"]),
 });

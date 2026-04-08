@@ -26,7 +26,8 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
-  Star
+  Star,
+  Trophy
 } from 'lucide-react'
 
 const navItems = [
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/dashboard/roadmap', label: '30-Day Roadmap', icon: Map },
   { href: '/dashboard/history', label: 'Analysis History', icon: Clock },
   { href: '/dashboard/summary', label: 'Summary', icon: ScrollText },
+  { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/membership', label: 'Membership', icon: Star },
 ]
 
