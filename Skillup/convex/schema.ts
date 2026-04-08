@@ -44,6 +44,8 @@ export default defineSchema({
             skill: v.string(),
             impact: v.number(),
             status: v.string(),
+            scoreBoost: v.optional(v.number()),
+            marketImportance: v.optional(v.number()),
         })),
         explanation: v.optional(v.object({
             factors: v.array(v.string()),
@@ -52,6 +54,8 @@ export default defineSchema({
             bonusCoverage: v.number(),
             experienceFactor: v.number(),
         })),
+        potentialScore: v.optional(v.number()),
+        confidenceScore: v.optional(v.number()),
         resumeText: v.optional(v.string()),
         createdAt: v.any(),
     }).index("by_userId", ["userId"]),

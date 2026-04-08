@@ -13,7 +13,9 @@ import {
   AlertCircle,
   Network,
   BrainCircuit,
-  GraduationCap as GradCapEmpty
+  GraduationCap as GradCapEmpty,
+  TrendingUp,
+  Zap
 } from 'lucide-react'
 import { ListSkeleton } from '@/components/dashboard/content-skeletons'
 import { skillDependencies } from '@/lib/data'
@@ -65,12 +67,17 @@ export default function GapsPage() {
     )
   }
 
-  const skillsWithDeps = currentAnalysis.missingSkills.map(skill => ({
-    skill,
-    isCore: jobRole.coreSkills?.includes(skill) || false,
-    dependencies: getSkillDependencies(skill),
-    priority: jobRole.coreSkills?.includes(skill) ? 1 : 2,
-  }))
+  const skillsWithDeps = currentAnalysis.missingSkills.map(skill => {
+    const breakdown = currentAnalysis.scoreBreakdown.find(b => b.skill === skill)
+    return {
+      skill,
+      isCore: jobRole.coreSkills?.includes(skill) || false,
+      dependencies: getSkillDependencies(skill),
+      priority: jobRole.coreSkills?.includes(skill) ? 1 : 2,
+      scoreBoost: (breakdown as any)?.scoreBoost || (jobRole.coreSkills?.includes(skill) ? 12 : 5),
+      marketImportance: (breakdown as any)?.marketImportance || 0.7,
+    }
+  })
 
   // Sort by: no dependencies first, then core skills, then others
   const sortedSkills = skillsWithDeps.sort((a, b) => {
@@ -168,6 +175,14 @@ export default function GapsPage() {
                       ) : (
                         <Badge variant="outline">Bonus</Badge>
                       )}
+                      <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        +{item.scoreBoost}% Ready
+                      </Badge>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
+                        <Zap className="w-3 h-3 text-warning fill-warning" />
+                        Market Value: {Math.round(item.marketImportance * 100)}%
+                      </div>
                     </div>
 
                     {item.dependencies.length > 0 && (

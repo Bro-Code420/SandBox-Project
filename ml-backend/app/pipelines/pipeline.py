@@ -260,22 +260,13 @@ def compute_readiness(
     experience_years: float,
     core_coverage: float
 ) -> Tuple[str, float, List[str]]:
-    """Compute job readiness with explainable factors.
-    
-    Thresholds (from docs):
-    - >80% = Industry Ready
-    - 60-80% = Almost Ready  
-    - <60% = Needs Upskilling
-    
-    Returns:
-        Tuple of (label, score, explanation_factors)
-    """
+    """Compute job readiness with explainable factors."""
     model = ReadinessModel()
     features = [weighted_score, experience_years]
     proba = model.predict_proba(features)
     readiness_score = float(proba[1])
     
-    # Determine label using doc-specified thresholds
+    # Determine label
     if readiness_score >= 0.80:
         label = "Industry Ready"
     elif readiness_score >= 0.60:
@@ -283,31 +274,67 @@ def compute_readiness(
     else:
         label = "Needs Upskilling"
     
-    # Generate explanation factors
+    # Factors (only for human-readable explanation)
     factors = []
-    
     if core_coverage >= 0.8:
         factors.append(f"Strong core skill coverage ({core_coverage:.0%})")
-    elif core_coverage >= 0.5:
-        factors.append(f"Moderate core skill coverage ({core_coverage:.0%})")
-    else:
-        factors.append(f"Low core skill coverage ({core_coverage:.0%}) - focus on core skills first")
-    
-    if experience_years >= 3:
-        factors.append(f"Good experience level ({experience_years:.1f} years)")
-    elif experience_years >= 1:
-        factors.append(f"Some experience ({experience_years:.1f} years)")
-    else:
-        factors.append("Limited experience - consider internships or projects")
-    
-    if weighted_score >= 0.7:
-        factors.append("Overall skill profile is strong")
-    elif weighted_score >= 0.4:
-        factors.append("Skill profile needs improvement in key areas")
-    else:
-        factors.append("Significant skill gaps need to be addressed")
-    
+    elif core_coverage < 0.5:
+        factors.append(f"Low core skill coverage ({core_coverage:.0%})")
+        
     return label, readiness_score, factors
+
+
+def calculate_roi_boosts(
+    current_score: float,
+    experience_years: float,
+    skill_analysis: Dict[str, Any],
+    role_intel: Optional[RoleIntelligence]
+) -> List[Dict[str, Any]]:
+    """Perform 'What-If' analysis to calculate score impact per missing skill."""
+    if not skill_analysis.get("missing_skills"):
+        return []
+        
+    core = role_intel.core_skills if role_intel else []
+    secondary = role_intel.secondary_skills if role_intel else []
+    bonus = role_intel.bonus_skills if role_intel else []
+    
+    total_role_skills = len(core) + len(secondary) + len(bonus)
+    if total_role_skills == 0:
+        return skill_analysis["missing_skills"]
+        
+    total_weight = (
+        len(core) * SKILL_WEIGHTS["core"] +
+        len(secondary) * SKILL_WEIGHTS["secondary"] +
+        len(bonus) * SKILL_WEIGHTS["bonus"]
+    )
+    
+    enriched_gaps = []
+    model = ReadinessModel()
+    
+    for gap in skill_analysis["missing_skills"]:
+        # Simulate matching this specific skill
+        sim_weight = gap.get("weight", 1.0)
+        sim_matched_weight = (skill_analysis["weighted_score"] * total_weight) + sim_weight
+        sim_weighted_score = sim_matched_weight / total_weight
+        
+        # Predict hypothetical score
+        sim_proba = model.predict_proba([sim_weighted_score, experience_years])
+        sim_score = float(sim_proba[1])
+        
+        # Calculate impact
+        impact = max(0, sim_score - current_score)
+        
+        # Market importance (normalized weight)
+        market_val = sim_weight / SKILL_WEIGHTS["core"]
+        
+        enriched_gaps.append({
+            **gap,
+            "score_impact": round(impact, 3),
+            "market_importance": round(market_val, 2),
+            "learning_time_days": 3 if gap["priority"] == "core" else 7 # heuristic
+        })
+        
+    return enriched_gaps
 
 
 def run_pipeline(
@@ -364,17 +391,40 @@ def run_pipeline(
         skill_analysis["core_coverage"]
     )
     
-    # Step 5: Get recommendations for missing skills (prioritized heavy search)
-    recommendations = get_priority_recommendations(skill_analysis["missing_skills"])
+    # Step 4.5: Calculate Score ROI (Impact Engines)
+    enriched_missing = calculate_roi_boosts(
+        readiness_score, 
+        experience_years, 
+        skill_analysis, 
+        role_intel
+    )
+    
+    # Calculate Potential Score (if all core are learned)
+    # Simulate match ratio of 1.0 for core
+    model = ReadinessModel()
+    potential_proba = model.predict_proba([0.95, experience_years]) # 0.95 as target
+    potential_score = float(potential_proba[1])
+    
+    # Confidence Score logic
+    confidence = 0.5
+    if resume_text: confidence += 0.2
+    if len(candidate_skills) >= 6: confidence += 0.15
+    if role_id: confidence += 0.1
+    confidence = min(0.95, confidence)
+    
+    # Step 5: Get recommendations for missing skills
+    recommendations = get_priority_recommendations(enriched_missing)
     
     # Step 6: Generate 30-day roadmap
-    missing_skill_names = [s["skill"] for s in skill_analysis["missing_skills"]]
+    missing_skill_names = [s["skill"] for s in enriched_missing]
     roadmap = get_learning_roadmap(missing_skill_names, weeks=4)
     
     # Build response
     return {
         "readiness_label": label,
         "readiness_score": readiness_score,
+        "potential_score": potential_score,
+        "confidence_score": confidence,
         "role_title": role_title,
         "role_level": role_level,
         "skill_analysis": {
@@ -382,7 +432,7 @@ def run_pipeline(
             "matched_core": skill_analysis["matched_core"],
             "matched_secondary": skill_analysis["matched_secondary"],
             "matched_bonus": skill_analysis["matched_bonus"],
-            "missing_skills": skill_analysis["missing_skills"],
+            "missing_skills": enriched_missing,
             "match_percentage": skill_analysis["match_percentage"],
             "weighted_score": skill_analysis["weighted_score"],
         },
@@ -393,7 +443,7 @@ def run_pipeline(
             "experience_factor": min(experience_years / 5, 1.0),
             "factors": factors,
         },
-        "missing_skills": skill_analysis["missing_skills"],
+        "missing_skills": enriched_missing,
         "recommendations": recommendations,
         "roadmap": roadmap,
         "extracted_skills": extracted_skills,

@@ -22,6 +22,9 @@ export interface MLSkillGap {
   priority: 'core' | 'secondary' | 'bonus'
   weight: number  // 1.0, 0.6, 0.3
   rank: number
+  score_impact: number
+  market_importance: number
+  learning_time_days: number
 }
 
 export interface MLLearningResource {
@@ -68,6 +71,8 @@ export interface MLReadinessExplanation {
 export interface MLAnalyzeResponse {
   readiness_label: string  // "Industry Ready", "Almost Ready", "Needs Upskilling"
   readiness_score: number  // 0.0 - 1.0
+  potential_score: number
+  confidence_score: number
   role_title?: string | null
   role_level?: string | null
   skill_analysis: MLSkillAnalysis
@@ -132,13 +137,15 @@ export function mapBackendToAnalysisResult(
     })
   })
 
-  // Add missing skills
+  // Add missing skills with Score ROI
   response.missing_skills.forEach(gap => {
     const impactBase = gap.priority === 'core' ? 80 : gap.priority === 'secondary' ? 15 : 5
     scoreBreakdown.push({
       skill: gap.skill,
       impact: -Math.round(impactBase / Math.max(response.missing_skills.filter(s => s.priority === gap.priority).length, 1)),
-      status: 'missing'
+      status: 'missing',
+      scoreBoost: Math.round((gap.score_impact || 0) * 100),
+      marketImportance: gap.market_importance || 0.5,
     })
   })
 
@@ -151,7 +158,9 @@ export function mapBackendToAnalysisResult(
       title: response.role_title || `${roleLevel} ${domain}`,
     },
     readinessScore,
-    readinessStatus: mapReadinessLabel(response.readiness_label),
+    potentialScore: Math.round((response.potential_score || 0) * 100),
+    confidenceScore: Math.round((response.confidence_score || 0.8) * 100),
+    readinessStatus: mapReadinessLabel(response.readiness_label || 'Needs Upskilling'),
     matchedSkills: response.skill_analysis.matched_skills,
     missingSkills: response.missing_skills.map(g => g.skill),
     resumeFitScore: Math.round(response.skill_analysis.match_percentage * 100),
@@ -206,8 +215,8 @@ export function enrichRoadmapWithRecommendations(
         .filter(r => r.type === 'course')
         .forEach(r => courses.push({
           title: r.title,
-          platform: r.provider || 'Online Platform',
-          url: r.url || `https://www.google.com/search?q=${encodeURIComponent(r.title)}`,
+          platform: r.provider || 'Udemy',
+          url: r.url || `https://www.udemy.com/courses/search/?q=${encodeURIComponent(r.title)}`,
           duration: `${r.duration_hours || 10} hours`,
           reason: r.reason || undefined,
         }))
@@ -225,7 +234,6 @@ export function enrichRoadmapWithRecommendations(
 
     // Strip internal _allSkills field, return clean WeekPlan
     const { _allSkills, ...cleanWeek } = week
-    return { ...cleanWeek, courses, youtubePlaylists }
+    return { ...cleanWeek, courses, youtubePlaylists } as WeekPlan
   })
 }
-

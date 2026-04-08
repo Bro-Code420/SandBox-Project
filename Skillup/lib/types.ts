@@ -28,6 +28,8 @@ export interface ScoreBreakdown {
   skill: string
   impact: number
   status: 'matched' | 'missing' | 'partial'
+  scoreBoost?: number // The potential readiness boost if learned (+12%)
+  marketImportance?: number // Market value (0.0-1.0)
 }
 
 export interface AnalysisResult {
@@ -39,6 +41,8 @@ export interface AnalysisResult {
     title: string
   }
   readinessScore: number
+  potentialScore: number
+  confidenceScore: number
   readinessStatus: ReadinessStatus
   matchedSkills: string[]
   missingSkills: string[]

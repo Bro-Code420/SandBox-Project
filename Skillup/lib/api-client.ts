@@ -125,6 +125,37 @@ export function mapDomainToRoleId(domain: string): string {
 }
 
 /**
+ * Map RoleLevel and experienceRange to numeric years for ML model
+ */
+export function mapLevelToYears(level: string, range?: string): number {
+  if (range) {
+    // Try to extract first number from range like "0-2 years", "2-5 years", "5+ years"
+    const match = range.match(/\d+/)
+    if (match) {
+      const start = parseInt(match[0])
+      if (range.includes('+')) return start + 2 // 5+ -> 7
+      if (range.includes('-')) {
+        const endMatch = range.match(/- \s*(\d+)/) || range.match(/-(\d+)/)
+        if (endMatch) {
+          const end = parseInt(endMatch[1])
+          return (start + end) / 2 // 2-5 -> 3.5
+        }
+      }
+      return start
+    }
+  }
+
+  // Fallback to level-based defaults
+  const levelMap: Record<string, number> = {
+    'intern': 0.5,
+    'junior': 1.5,
+    'mid': 3.5,
+    'senior': 7.0,
+  }
+  return levelMap[level] || 0
+}
+
+/**
  * Convenience function: Analyze with frontend types
  */
 export async function analyzeWithFrontendTypes({

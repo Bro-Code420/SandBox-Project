@@ -81,14 +81,21 @@ def _get_ml_recommendations(skill: str, max_resources: int) -> List[Dict[str, An
             else:
                 title = resource
                 r_type = "course" if "course" in title.lower() else "video"
-                
+            
+            # Construct direct platform search as fallback if URL is missing
+            encoded_title = title.replace(' ', '+')
+            if r_type == "course":
+                fallback_url = f"https://www.udemy.com/courses/search/?q={encoded_title}"
+            else:
+                fallback_url = f"https://www.youtube.com/results?search_query={encoded_title}"
+
             result.append({
                 "title": title,
                 "type": r_type,
-                "url": resource.get("url", f"https://www.google.com/search?q={title.replace(' ', '+')}") if isinstance(resource, dict) else f"https://www.google.com/search?q={title.replace(' ', '+')}",
+                "url": resource.get("url", fallback_url) if isinstance(resource, dict) else fallback_url,
                 "difficulty": resource.get("difficulty", "intermediate") if isinstance(resource, dict) else "intermediate",
                 "duration_hours": float(resource.get("duration_hours", 10)) if isinstance(resource, dict) else 10.0,
-                "provider": resource.get("provider", "Online Platform") if isinstance(resource, dict) else "Online Platform",
+                "provider": resource.get("provider", "Udemy" if r_type == "course" else "YouTube") if isinstance(resource, dict) else ("Udemy" if r_type == "course" else "YouTube"),
                 "ml_score": float(scores[i]),
             })
     

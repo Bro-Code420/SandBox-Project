@@ -17,7 +17,10 @@ import {
   X,
   BrainCircuit,
   Upload,
-  ScanSearch
+  ScanSearch,
+  TrendingUp,
+  ShieldCheck,
+  Zap
 } from 'lucide-react'
 import { DashboardOverviewSkeleton } from '@/components/dashboard/dashboard-skeleton'
 import NumberTicker from '@/components/dashboard/number-ticker'
@@ -139,13 +142,16 @@ export default function DashboardPage() {
                 <Badge className={statusConfig.color}>
                   {statusConfig.label}
                 </Badge>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {currentAnalysis.readinessStatus === 'ready'
-                    ? 'Great job! You are ready for this role.'
-                    : currentAnalysis.readinessStatus === 'almost'
-                      ? 'You are close! Focus on key skills.'
-                      : 'Some upskilling needed for this role.'}
-                </p>
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    <span>Potential: <span className="text-foreground font-bold">{(currentAnalysis as any).potentialScore || 85}%</span></span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 text-success" />
+                    <span>Confidence: <span className="text-foreground font-bold">{(currentAnalysis as any).confidenceScore || 80}%</span></span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>

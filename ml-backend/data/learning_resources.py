@@ -62,56 +62,83 @@ def search_youtube_realtime(skill: str, limit: int = 2) -> List[Dict[str, Any]]:
 def get_resources_for_skill(skill: str, max_resources: int = 3, perform_heavy_search: bool = True) -> List[Dict[str, Any]]:
     """Get learning resources for a skill dynamically.
     
-    If `perform_heavy_search` is False, it skips the YouTube API to save time 
-    and only returns structured Deep-Links.
+    Ensures a balanced mix of YouTube and Course (Udemy/Coursera) content.
     """
     skill_lower = skill.strip()
     encoded_skill = skill_lower.replace(" ", "+")
     
+    # Calculate distribution
+    # For max_resources=3 (default), we want 2 YouTube and 1 Course or vice-versa
+    yt_target = max(1, max_resources - 1)
+    
     resources = []
     
-    # 1. Real-time YouTube scraping (Only if performing heavy search)
+    # 1. Real-time YouTube scraping
     if perform_heavy_search:
-        yt_resources = search_youtube_realtime(skill_lower, limit=2)
-        
+        yt_resources = search_youtube_realtime(skill_lower, limit=yt_target)
         if yt_resources:
             resources.extend(yt_resources)
-        else:
-            # Fallback if API fails
-            resources.append({
-                "type": "youtube",
-                "title": f"Explore {skill} on YouTube",
-                "channel": "YouTube Search",
-                "url": f"https://www.youtube.com/results?search_query={encoded_skill}+tutorial",
-                "difficulty": "beginner",
-                "duration_hours": 10,
-                "reason": "Direct search link provided as the connection to YouTube timed out."
-            })
     
-    # 2. Dynamic Deep-Links to Premium Platforms
-    udemy_resource = {
+    # Fallback/Safety: If no YouTube resources found but requested, add a direct link
+    if not any(r['type'] == 'youtube' for r in resources):
+        resources.append({
+            "type": "youtube",
+            "title": f"The Ultimate {skill} Guide (YouTube)",
+            "channel": "YouTube Search",
+            "url": f"https://www.youtube.com/results?search_query={encoded_skill}+tutorial",
+            "difficulty": "beginner",
+            "duration_hours": 5.0,
+            "reason": "Direct search link to the most relevant community tutorials."
+        })
+    
+    # 2. Dynamic Deep-Links to Premium Platforms (Always add as courses)
+    # We add BOTH to allow the final slice to pick at least one
+    resources.append({
         "type": "course",
         "title": f"Top Rated {skill} Courses",
         "provider": "Udemy",
         "url": f"https://www.udemy.com/courses/search/?q={encoded_skill}",
         "difficulty": "beginner",
         "duration_hours": 15,
-        "reason": "Udemy often has incredible project-based, deeply structured courses."
-    }
+        "reason": "Udemy offers project-based, deeply structured professional courses."
+    })
     
-    coursera_resource = {
+    resources.append({
         "type": "course",
         "title": f"Professional {skill} Certifications",
         "provider": "Coursera",
         "url": f"https://www.coursera.org/search?query={encoded_skill}",
         "difficulty": "intermediate",
         "duration_hours": 20,
-        "reason": "Coursera is optimal for academic theory and strict certifications."
-    }
+        "reason": "Coursera is optimal for academic theory and verified certifications."
+    })
     
-    resources.append(random.choice([udemy_resource, coursera_resource]))
+    # Final assembly: Ensure variety by sorting or interleaving if needed
+    # But simple slicing usually works if we have enough of both
     
-    return resources[:max_resources]
+    # Prioritize having at least one of each in the top results
+    final_list = []
+    has_yt = False
+    has_course = False
+    
+    # First pass: try to get one of each
+    for r in resources:
+        if r['type'] == 'youtube' and not has_yt:
+            final_list.append(r)
+            has_yt = True
+        elif r['type'] == 'course' and not has_course:
+            final_list.append(r)
+            has_course = True
+            
+        if len(final_list) >= 2: break
+        
+    # Second pass: fill remaining slots
+    for r in resources:
+        if r not in final_list:
+            final_list.append(r)
+        if len(final_list) >= max_resources: break
+        
+    return final_list[:max_resources]
 
 def get_resources_for_skills(skills: List[str], max_per_skill: int = 2) -> Dict[str, List[Dict[str, Any]]]:
     """Get learning resources for multiple skills.

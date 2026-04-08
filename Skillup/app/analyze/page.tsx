@@ -8,9 +8,9 @@ import { api } from '@/convex/_generated/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
-import { Sparkles, Brain, Target, Route, CheckCircle, AlertCircle } from 'lucide-react'
+import { Sparkles, Brain, Target, Route, CheckCircle, AlertCircle, TrendingUp, ShieldCheck } from 'lucide-react'
 import { calculateReadinessScore, getReadinessStatus, calculateResumeFitScore } from '@/lib/store'
-import { analyzeWithFrontendTypes, MLBackendError } from '@/lib/api-client'
+import { analyzeWithFrontendTypes, MLBackendError, mapLevelToYears } from '@/lib/api-client'
 import { mapBackendToAnalysisResult, mapBackendToRoadmap, enrichRoadmapWithRecommendations } from '@/lib/backend-types'
 import type { ScoreBreakdown, RoleLevel } from '@/lib/types'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -92,7 +92,7 @@ export default function AnalyzePage() {
         skills: userSkills,
         domain: jobRole.domain,
         roleLevel: jobRole.roleLevel as any,
-        experienceYears: 0,
+        experienceYears: mapLevelToYears(jobRole.roleLevel, jobRole.experienceRange),
         resumeText: resumeInput,
       })
 

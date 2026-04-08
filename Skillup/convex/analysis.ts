@@ -17,6 +17,8 @@ export const saveAnalysis = mutation({
             skill: v.string(),
             impact: v.number(),
             status: v.string(),
+            scoreBoost: v.optional(v.number()),
+            marketImportance: v.optional(v.number()),
         })),
         explanation: v.optional(v.object({
             factors: v.array(v.string()),
@@ -25,6 +27,8 @@ export const saveAnalysis = mutation({
             bonusCoverage: v.number(),
             experienceFactor: v.number(),
         })),
+        potentialScore: v.optional(v.number()),
+        confidenceScore: v.optional(v.number()),
         resumeText: v.optional(v.string()),
     },
     handler: async (ctx, args) => {

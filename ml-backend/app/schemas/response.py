@@ -8,6 +8,9 @@ class SkillGap(BaseModel):
     priority: str  # "core", "secondary", "bonus"
     weight: float  # Priority weight (1.0, 0.6, 0.3)
     rank: int  # Learning order rank
+    score_impact: float = 0.0  # Potential score boost
+    market_importance: float = 0.5  # Market value (0.0-1.0)
+    learning_time_days: int = 5  # Estimated time
 
 
 class LearningResource(BaseModel):
@@ -60,6 +63,8 @@ class AnalyzeResponse(BaseModel):
     # Basic readiness info
     readiness_label: str  # "Industry Ready", "Almost Ready", "Needs Upskilling"
     readiness_score: float  # 0.0 - 1.0
+    potential_score: float = 0.0  # Max possible score
+    confidence_score: float = 0.8  # AI confidence (0.0-1.0)
     
     # Role info (if role-based analysis)
     role_title: Optional[str] = None
