@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.startup import load_models_on_startup
@@ -7,14 +8,17 @@ from app.services.inference_service import run_analysis
 app = FastAPI(title="Career Readiness ML Backend")
 
 # Configure CORS for Next.js frontend
+# In local development, allow any origin so browser-hosted frontend can reach the backend.
+allowed_origins = os.getenv("ML_BACKEND_ALLOW_ORIGINS")
+if allowed_origins:
+    allowed_origins = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
+else:
+    allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://*.vercel.app",  # For production
-    ],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

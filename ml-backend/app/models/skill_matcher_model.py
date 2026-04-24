@@ -12,20 +12,30 @@ import numpy as np
 class SkillMatcherModel:
     """ML-based semantic skill matching using embeddings."""
     
-    def __init__(self, artifacts_dir: Optional[Path] = None):
+    def __init__(
+        self,
+        artifacts_dir: Optional[Path] = None,
+        embeddings: Optional[Dict[str, np.ndarray]] = None,
+        skills: Optional[List[str]] = None,
+    ):
         """Load the skill embeddings.
         
         Args:
             artifacts_dir: Path to model artifacts directory
+            embeddings: Preloaded skill embeddings
+            skills: Preloaded skill list
         """
         if artifacts_dir is None:
             artifacts_dir = Path(__file__).resolve().parents[2] / "ml" / "artifacts"
         
-        self._embeddings: Dict[str, np.ndarray] = {}
-        self._skills: List[str] = []
+        self._embeddings: Dict[str, np.ndarray] = embeddings or {}
+        self._skills: List[str] = skills or []
         self._loaded = False
         
-        self._load_embeddings(artifacts_dir)
+        if embeddings is None or skills is None:
+            self._load_embeddings(artifacts_dir)
+        else:
+            self._loaded = bool(self._embeddings and self._skills)
     
     def _load_embeddings(self, artifacts_dir: Path):
         """Load embeddings from disk."""
@@ -38,6 +48,8 @@ class SkillMatcherModel:
         
         if skills_path.exists():
             self._skills = load(skills_path)
+        
+        self._loaded = bool(self._embeddings and self._skills)
     
     @property
     def is_loaded(self) -> bool:
@@ -166,5 +178,11 @@ def get_skill_matcher_model() -> SkillMatcherModel:
     """Get or create the skill matcher model instance."""
     global _model_instance
     if _model_instance is None:
-        _model_instance = SkillMatcherModel()
+        from app.core.startup import get_model
+
+        model = get_model("skill_matcher")
+        if isinstance(model, SkillMatcherModel):
+            _model_instance = model
+        else:
+            _model_instance = SkillMatcherModel()
     return _model_instance

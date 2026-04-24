@@ -3,7 +3,7 @@ import { AuthConfig } from "convex/server";
 export default {
   providers: [
     {
-      domain: "https://wise-starfish-47.clerk.accounts.dev",
+      domain: "https://dashing-teal-90.clerk.accounts.dev",
       applicationID: "convex",
     },
   ]

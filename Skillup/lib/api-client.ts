@@ -4,7 +4,12 @@
 
 import type { MLAnalyzeRequest, MLAnalyzeResponse } from './backend-types'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_ML_BACKEND_URL || 'http://localhost:8000'
+const defaultHost =
+  typeof window !== 'undefined' && window.location.hostname
+    ? window.location.hostname
+    : 'localhost'
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_ML_BACKEND_URL || `http://${defaultHost}:8000`
 
 export class MLBackendError extends Error {
   constructor(

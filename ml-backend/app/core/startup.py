@@ -4,10 +4,19 @@ Loads all ML models into memory for fast inference.
 """
 
 from joblib import load
-from app.core.config import ARTIFACTS_DIR
 from pathlib import Path
+from app.core.config import ARTIFACTS_DIR
+from app.models.skill_matcher_model import SkillMatcherModel
 
 _MODELS = {}
+MODEL_KEYS = [
+    "readiness",
+    "skill_extractor",
+    "skill_embeddings",
+    "skill_matcher",
+    "gap_ranker",
+    "recommender",
+]
 
 
 def load_models_on_startup():
@@ -34,11 +43,20 @@ def load_models_on_startup():
     
     # 3. Skill Embeddings
     embeddings_path = ARTIFACTS_DIR / "skill_embeddings.joblib"
+    skill_list_path = ARTIFACTS_DIR / "skill_list.joblib"
     if embeddings_path.exists():
         _MODELS["skill_embeddings"] = load(embeddings_path)
         print(f"  [OK] Loaded skill embeddings")
     
-    # 4. Gap Ranker Model
+    # 4. Skill Matcher Model
+    if embeddings_path.exists() and skill_list_path.exists():
+        _MODELS["skill_matcher"] = SkillMatcherModel()
+        print(f"  [OK] Loaded skill matcher")
+    else:
+        if not skill_list_path.exists():
+            print(f"  [WARN] Missing skill_list.joblib, skill matcher will not be loaded")
+    
+    # 5. Gap Ranker Model
     gap_ranker_path = ARTIFACTS_DIR / "gap_ranker_model.joblib"
     metadata_path = ARTIFACTS_DIR / "skill_metadata.joblib"
     if gap_ranker_path.exists():
@@ -47,7 +65,7 @@ def load_models_on_startup():
             _MODELS["skill_metadata"] = load(metadata_path)
         print(f"  [OK] Loaded gap ranker")
     
-    # 5. Recommender Model
+    # 6. Recommender Model
     recommender_path = ARTIFACTS_DIR / "recommender_predictions.joblib"
     if recommender_path.exists():
         _MODELS["recommender"] = {
@@ -58,7 +76,8 @@ def load_models_on_startup():
         }
         print(f"  [OK] Loaded recommender")
     
-    print(f"Loaded {len(_MODELS)} models")
+    loaded_models = [name for name in MODEL_KEYS if name in _MODELS]
+    print(f"Loaded {len(loaded_models)} models: {loaded_models}")
 
 
 def get_model(name: str):
