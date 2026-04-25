@@ -1,193 +1,58 @@
-/**
- * API Client for ML Backend Integration
- */
+import axios from 'axios';
+import { MLAnalyzeRequest, MLAnalyzeResponse } from './backend-types';
 
-import type { MLAnalyzeRequest, MLAnalyzeResponse } from './backend-types'
-
-const defaultHost =
-  typeof window !== 'undefined' && window.location.hostname
-    ? window.location.hostname
-    : 'localhost'
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_ML_BACKEND_URL || `http://${defaultHost}:8000`
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_ML_BACKEND_URL || 'http://localhost:8000',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export class MLBackendError extends Error {
-  constructor(
-    message: string,
-    public status?: number,
-    public details?: any
-  ) {
-    super(message)
-    this.name = 'MLBackendError'
+  constructor(message: string, public status?: number, public data?: any) {
+    super(message);
+    this.name = 'MLBackendError';
   }
 }
 
 /**
- * Check if the ML backend is healthy
+ * Wrapper for the /analyze endpoint that handles frontend -> backend key mapping
  */
-export async function checkBackendHealth(): Promise<boolean> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/health`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    return response.ok
-  } catch (error) {
-    console.error('Backend health check failed:', error)
-    return false
-  }
-}
-
-/**
- * Call ML backend to analyze career readiness
- */
-export async function analyzeCareerReadiness(
-  request: MLAnalyzeRequest
-): Promise<MLAnalyzeResponse> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/inference/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new MLBackendError(
-        `Backend API error: ${response.statusText}`,
-        response.status,
-        errorData
-      )
-    }
-
-    const data: MLAnalyzeResponse = await response.json()
-    return data
-  } catch (error) {
-    if (error instanceof MLBackendError) {
-      throw error
-    }
-    
-    // Network or other errors
-    throw new MLBackendError(
-      'Failed to connect to ML backend. Please ensure the backend server is running.',
-      undefined,
-      error
-    )
-  }
-}
-
-/**
- * Map frontend role domain to backend role_id
- * Frontend uses display names like "Frontend Developer"
- * Backend expects snake_case IDs like "frontend_developer"
- */
-export function mapDomainToRoleId(domain: string): string {
-  // Frontend uses domain IDs like: 'frontend', 'backend', 'fullstack', 'data', 'devops'
-  const domainMap: Record<string, string> = {
-    // Direct ID mappings (from jobDomains)
-    'frontend': 'frontend_developer',
-    'backend': 'backend_developer',
-    'fullstack': 'fullstack_developer',
-    'data': 'data_scientist',
-    'devops': 'devops_engineer',
-    
-    // Display name mappings (fallback)
-    'Frontend Developer': 'frontend_developer',
-    'frontend-developer': 'frontend_developer',
-    'frontend developer': 'frontend_developer',
-    'Frontend Development': 'frontend_developer',
-    
-    'Backend Developer': 'backend_developer',
-    'backend-developer': 'backend_developer',
-    'backend developer': 'backend_developer',
-    'Backend Development': 'backend_developer',
-    
-    'Full Stack Developer': 'fullstack_developer',
-    'fullstack-developer': 'fullstack_developer',
-    'full stack developer': 'fullstack_developer',
-    'fullstack developer': 'fullstack_developer',
-    'Full Stack Development': 'fullstack_developer',
-    
-    'Data Scientist': 'data_scientist',
-    'data-scientist': 'data_scientist',
-    'data scientist': 'data_scientist',
-    'Data Science': 'data_scientist',
-    
-    'DevOps Engineer': 'devops_engineer',
-    'devops-engineer': 'devops_engineer',
-    'devops engineer': 'devops_engineer',
-    'DevOps Engineering': 'devops_engineer',
-  }
-
-  const normalized = domain.toLowerCase()
-  const roleId = domainMap[domain] || domainMap[normalized] || normalized.replace(/\s+/g, '_').replace(/-/g, '_')
-  
-  return roleId
-}
-
-/**
- * Map RoleLevel and experienceRange to numeric years for ML model
- */
-export function mapLevelToYears(level: string, range?: string): number {
-  if (range) {
-    // Try to extract first number from range like "0-2 years", "2-5 years", "5+ years"
-    const match = range.match(/\d+/)
-    if (match) {
-      const start = parseInt(match[0])
-      if (range.includes('+')) return start + 2 // 5+ -> 7
-      if (range.includes('-')) {
-        const endMatch = range.match(/- \s*(\d+)/) || range.match(/-(\d+)/)
-        if (endMatch) {
-          const end = parseInt(endMatch[1])
-          return (start + end) / 2 // 2-5 -> 3.5
-        }
-      }
-      return start
-    }
-  }
-
-  // Fallback to level-based defaults
-  const levelMap: Record<string, number> = {
-    'intern': 0.5,
-    'junior': 1.5,
-    'mid': 3.5,
-    'senior': 7.0,
-  }
-  return levelMap[level] || 0
-}
-
-/**
- * Convenience function: Analyze with frontend types
- */
-export async function analyzeWithFrontendTypes({
-  userId,
-  skills,
-  domain,
-  roleLevel,
-  experienceYears = 0,
-  resumeText,
-}: {
-  userId?: string
-  skills: string[]
-  domain: string
-  roleLevel: 'intern' | 'junior' | 'mid' | 'senior'
-  experienceYears?: number
-  resumeText?: string
+export async function analyzeWithFrontendTypes(data: {
+  userId: string;
+  skills: string[];
+  domain: string;
+  roleLevel: 'intern' | 'junior' | 'mid' | 'senior';
+  experienceYears: number;
+  resumeText: string;
 }): Promise<MLAnalyzeResponse> {
-  const roleId = mapDomainToRoleId(domain)
-  
-  const request: MLAnalyzeRequest = {
-    candidate_id: userId,
-    skills,
-    role_id: roleId,
-    level: roleLevel,
-    experience_years: experienceYears,
-    resume_text: resumeText,
+  try {
+    const requestData: MLAnalyzeRequest = {
+      candidate_id: data.userId,
+      skills: data.skills,
+      resume_text: data.resumeText,
+      role_id: data.domain,
+      level: data.roleLevel,
+      experience_years: data.experienceYears,
+    };
+
+    const response = await api.post<MLAnalyzeResponse>('/analyze', requestData);
+    return response.data;
+  } catch (error: any) {
+    throw new MLBackendError(
+      error.response?.data?.detail || 'Failed to connect to ML analysis engine',
+      error.response?.status,
+      error.response?.data
+    );
   }
-  
-  return analyzeCareerReadiness(request)
 }
+
+/**
+ * Utility to extract years from a range string (e.g. "2-5 years" -> 2)
+ */
+export function mapLevelToYears(level: string, range: string): number {
+  const match = range.match(/\d+/);
+  return match ? parseInt(match[0]) : 0;
+}
+
+export default api;

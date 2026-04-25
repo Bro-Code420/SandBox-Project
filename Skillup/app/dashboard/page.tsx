@@ -90,7 +90,7 @@ export default function DashboardPage() {
   ).slice(0, 3)
 
   return (
-    <div className="space-y-6 max-w-7xl w-full">
+    <div className="space-y-6 w-full max-w-[1600px] mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">

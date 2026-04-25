@@ -56,7 +56,7 @@ export default function LeaderboardPage() {
   const { leaderboard, current_user, top_skills, missing_skills, improvement_suggestions, insight, jd_analysis } = rankingData
 
   return (
-    <div className="max-w-7xl mx-auto py-6 space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-[1600px] mx-auto py-6 space-y-8 animate-in fade-in duration-500">
       {/* Header & Stats Overview */}
       <div className="grid lg:grid-cols-4 gap-6">
         <div className="lg:col-span-2 space-y-2">
@@ -329,7 +329,7 @@ export default function LeaderboardPage() {
 
 function LeaderboardSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto py-6 space-y-8">
+    <div className="max-w-[1600px] mx-auto py-6 space-y-8">
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <Skeleton className="h-4 w-32" />

@@ -253,7 +253,7 @@ export default function ResumeBuilderPage() {
     const styles = getTemplateStyles()
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto pb-12 print-container">
+        <div className="space-y-8 w-full max-w-[1600px] mx-auto pb-12 print-container">
             <style jsx global>{`
                 @media print {
                     body * {

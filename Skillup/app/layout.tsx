@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 import ConvexClientProvider from '@/components/ConvexClientProvider'
 import SyncUser from '@/components/SyncUser'
+import QueryProvider from '@/components/providers/QueryProvider'
 
 export const metadata: Metadata = {
   title: 'SkillUp | Intelligence AI',
@@ -30,8 +31,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased`} suppressHydrationWarning>
         <ConvexClientProvider>
-          <SyncUser />
-          {children}
+          <QueryProvider>
+            <SyncUser />
+            {children}
+          </QueryProvider>
         </ConvexClientProvider>
         <Analytics />
       </body>

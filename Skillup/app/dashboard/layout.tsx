@@ -149,7 +149,7 @@ export default function DashboardLayout({
                    <span className="text-2xl font-black text-sidebar-foreground tracking-tighter leading-none">
                      SkillUp
                    </span>
-                   <span className="text-sidebar-primary italic text-[10px] font-black uppercase tracking-[0.3em] mt-1 flex items-center gap-1 drop-shadow-[0_0_5px_rgba(107,144,128,0.8)]">
+                   <span className="text-sidebar-primary italic text-[10px] font-black uppercase tracking-[0.3em] mt-1 flex items-center gap-1 drop-shadow-[0_0_8px_rgba(164,195,178,0.6)]">
                      <span className="w-1.5 h-1.5 rounded-full bg-sidebar-primary animate-pulse shadow-[0_0_8px_rgba(107,144,128,1)]" />
                      Intelligence AI
                    </span>
@@ -176,8 +176,8 @@ export default function DashboardLayout({
                     "rounded-xl transition-all duration-200",
                     sidebarOpen ? "px-3 py-2.5" : "px-0 py-2",
                     pathname === item.href 
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/20" 
-                      : "hover:bg-sidebar-accent/50 text-sidebar-foreground/70"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground font-bold shadow-lg shadow-sidebar-primary/20" 
+                      : "hover:bg-sidebar-accent/50 text-sidebar-foreground/90 font-medium"
                   )}
                 />
               ))}
