@@ -9,24 +9,11 @@ import ConvexClientProvider from '@/components/ConvexClientProvider'
 import SyncUser from '@/components/SyncUser'
 
 export const metadata: Metadata = {
-  title: 'AI Career Readiness Analyzer',
-  description: 'Analyze your skills against job roles, identify skill gaps, and get personalized learning roadmaps',
+  title: 'SkillUp | Intelligence AI',
+  description: 'Industrial-grade Career Intelligence Engine. Analyze skills, identify gaps, and master your career path with AI-driven insights.',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
   },
 }
 

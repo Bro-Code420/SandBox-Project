@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { ProgressiveBlur } from '@/components/ui/progressive-blur'
+import { Badge } from '@/components/ui/badge'
 import {
   BrainCircuit,
   Gauge,
@@ -28,8 +29,13 @@ import {
   PanelLeftOpen,
   Star,
   Trophy,
-  FileText
+  FileText,
+  CreditCard,
+  Settings
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Gauge },
@@ -59,7 +65,6 @@ export default function DashboardLayout({
   const currentAnalysis = useQuery(api.analysis.getLatestAnalysis)
   const userProfile = useQuery(api.users.getProfile)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [isAtBottom, setIsAtBottom] = useState(false)
   
   const credits = userProfile?.credits ?? 0
@@ -112,151 +117,145 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-screen bg-background flex overflow-hidden">
-      {/* Mobile Sidebar Toggle & Theme */}
-      <div className="fixed top-4 left-4 z-50 lg:hidden flex gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="bg-background/80 backdrop-blur"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </Button>
-        <AnimatedThemeToggler className="w-10 h-10 flex items-center justify-center rounded-md bg-background/80 backdrop-blur hover:bg-background/90 transition-colors border shadow-sm" />
-      </div>
+    <div className={cn(
+      "h-screen bg-background flex overflow-hidden w-full mx-auto border-none",
+      "flex-col md:flex-row"
+    )}>
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
+        <SidebarBody className="justify-between gap-10 bg-sidebar border-r border-sidebar-border">
+          <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
+            {/* Logo Section */}
+            <div className={cn(
+              "flex items-center py-6 border-b border-sidebar-border/30 mb-4 transition-all duration-300 relative group",
+              sidebarOpen ? "justify-start px-4 gap-3" : "justify-center px-0 gap-0"
+            )}>
+               {/* Background Glow */}
+               <div className="absolute inset-0 bg-gradient-to-r from-sidebar-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+               
+               <div className="relative">
+                 <div className="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br from-sidebar-primary/20 to-sidebar-primary/5 flex items-center justify-center border border-sidebar-primary/20 shadow-inner">
+                    <BrainCircuit className="w-7 h-7 text-sidebar-primary drop-shadow-[0_0_8px_rgba(107,144,128,0.5)]" />
+                 </div>
+                 {/* Small Pulse Aura */}
+                 <div className="absolute -inset-1 bg-sidebar-primary/10 rounded-2xl blur-sm animate-pulse -z-10" />
+               </div>
 
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`
-        fixed lg:sticky lg:top-0 lg:h-screen inset-y-0 left-0 z-40
-        ${isCollapsed ? 'lg:w-20' : 'lg:w-64'} w-64 bg-sidebar border-r border-sidebar-border
-        transform transition-all duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="flex flex-col h-full overflow-x-hidden">
-          {/* Logo */}
-          <div className="h-16 border-b border-sidebar-border flex items-center shrink-0">
-            <Link href="/" className="flex items-center px-5 w-full">
-              <div className="w-10 h-10 shrink-0 rounded-lg bg-sidebar-primary/20 flex items-center justify-center">
-                <BrainCircuit className="w-6 h-6 shrink-0 text-sidebar-primary" />
-              </div>
-              <span className={`text-xl font-bold text-sidebar-foreground whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 ml-0' : 'w-24 opacity-100 ml-3'}`}>
-                Skillup
-              </span>
-            </Link>
-          </div>
-
-          {/* Navigation */}
-          <ScrollArea className="flex-1 py-4">
-            <nav className="space-y-2 px-3">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`
-                      flex items-center px-3 py-2 rounded-lg transition-colors
-                      ${isActive
-                        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
-                      }
-                    `}
-                    title={isCollapsed ? item.label : undefined}
-                  >
-                    <Icon className="w-5 h-5 shrink-0" />
-                    <span className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 ml-0' : 'w-40 opacity-100 ml-3'}`}>
-                      {item.label}
-                    </span>
-                  </Link>
-                )
-              })}
-            </nav>
-          </ScrollArea>
-          
-          {/* Membership/Credits Section */}
-          <div className={`mx-4 mb-4 p-4 rounded-xl bg-sidebar-accent/50 border border-sidebar-border transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0 p-0 mb-0 overflow-hidden' : 'opacity-100'}`}>
-            <div className="flex items-center justify-between mb-3 text-sidebar-foreground">
-              <span className="text-xs font-semibold uppercase tracking-wider">Plan: {membership}</span>
-              <span className="text-xs font-bold text-sidebar-primary bg-sidebar-primary/10 px-2 py-0.5 rounded-full">
-                {credits}/{maxCredits} Credits
-              </span>
+               {sidebarOpen && (
+                 <motion.div 
+                   initial={{ opacity: 0, x: -10 }}
+                   animate={{ opacity: 1, x: 0 }}
+                   className="flex flex-col"
+                 >
+                   <span className="text-2xl font-black text-sidebar-foreground tracking-tighter leading-none">
+                     SkillUp
+                   </span>
+                   <span className="text-sidebar-primary italic text-[10px] font-black uppercase tracking-[0.3em] mt-1 flex items-center gap-1 drop-shadow-[0_0_5px_rgba(107,144,128,0.8)]">
+                     <span className="w-1.5 h-1.5 rounded-full bg-sidebar-primary animate-pulse shadow-[0_0_8px_rgba(107,144,128,1)]" />
+                     Intelligence AI
+                   </span>
+                 </motion.div>
+               )}
             </div>
-            
-            <div className="space-y-2">
-              <div className="h-1.5 w-full bg-sidebar-border rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-sidebar-primary rounded-full transition-all duration-500" 
-                  style={{ width: `${creditPercentage}%` }}
+
+            {/* Navigation */}
+            <div className="flex flex-col gap-1 px-1">
+              {navItems.map((item, idx) => (
+                <SidebarLink 
+                  key={idx} 
+                  link={{
+                    label: item.label,
+                    href: item.href,
+                    icon: (
+                      <item.icon className={cn(
+                        "h-5 w-5 shrink-0 transition-colors",
+                        pathname === item.href ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/60"
+                      )} />
+                    )
+                  }}
+                  className={cn(
+                    "rounded-xl transition-all duration-200",
+                    sidebarOpen ? "px-3 py-2.5" : "px-0 py-2",
+                    pathname === item.href 
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/20" 
+                      : "hover:bg-sidebar-accent/50 text-sidebar-foreground/70"
+                  )}
                 />
-              </div>
-              <p className="text-[10px] text-sidebar-foreground/50 leading-tight">
-                Credits reset daily. Upgrade for unlimited analysis.
-              </p>
-              <Link href="/dashboard/membership" className="w-full">
-                <Button size="sm" className="w-full mt-2 h-8 text-xs bg-sidebar-primary hover:bg-sidebar-primary/90 text-sidebar-primary-foreground font-bold shadow-sm">
-                  Upgrade to Pro
-                </Button>
-              </Link>
+              ))}
             </div>
+
+            {/* Credits Section (Only when open) */}
+            {sidebarOpen && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 mx-2 p-4 rounded-2xl bg-gradient-to-br from-sidebar-accent/30 to-sidebar-accent/10 border border-sidebar-border/50"
+              >
+                <div className="flex items-center justify-between mb-3 text-sidebar-foreground">
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Plan: {membership}</span>
+                  <Badge variant="outline" className="bg-sidebar-primary/10 text-sidebar-primary border-none text-[10px] h-5 px-2">
+                    {credits}/{maxCredits}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="h-1.5 w-full bg-sidebar-border/50 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${creditPercentage}%` }}
+                      className="h-full bg-sidebar-primary rounded-full" 
+                    />
+                  </div>
+                  <p className="text-[9px] text-sidebar-foreground/40 leading-tight italic">
+                    Resets daily. Upgrade for unlimited power.
+                  </p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full mt-3 h-8 text-[10px] font-black uppercase tracking-wider border-sidebar-primary/30 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground transition-all"
+                    onClick={() => router.push('/dashboard/membership')}
+                  >
+                    Upgrade Pro
+                  </Button>
+                </div>
+              </motion.div>
+            )}
           </div>
 
-          {/* User Section */}
-          <div className="p-4 border-t border-sidebar-border">
-            <div className="flex items-center px-1">
-              <div className="shrink-0 flex items-center justify-center">
+          {/* Footer User Section */}
+          <div className="border-t border-sidebar-border/50 pt-4 pb-2">
+             <div className="flex items-center gap-3 px-2">
                 <UserButton 
                   afterSignOutUrl="/"
                   appearance={{
                     elements: {
-                      userButtonAvatarBox: "w-10 h-10 border border-border/50 shadow-sm",
-                      userButtonPopoverCard: "shadow-xl border border-border/50",
+                      userButtonAvatarBox: "w-8 h-8 border border-sidebar-border/50",
                     }
                   }}
                 />
-              </div>
-              <div className={`transition-all duration-300 flex-none ${isCollapsed ? 'w-0 opacity-0 ml-0' : 'w-40 opacity-100 ml-3'}`}>
-                <p className="text-sm font-medium text-sidebar-foreground truncate pointer-events-none">
-                  {user.fullName || user.primaryEmailAddress?.emailAddress || 'User'}
-                </p>
-                <p className="text-xs text-sidebar-foreground/60 truncate pointer-events-none">
-                  {currentAnalysis === undefined ? (
-                    'Loading...'
-                  ) : currentAnalysis ? (
-                    currentAnalysis.roleSnapshot.title
-                  ) : (
-                    'Not analyzed'
-                  )}
-                </p>
-              </div>
-            </div>
+                {sidebarOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col min-w-0"
+                  >
+                    <p className="text-xs font-bold text-sidebar-foreground truncate leading-tight">
+                      {user.fullName || 'Career Champion'}
+                    </p>
+                    <p className="text-[10px] text-sidebar-foreground/50 truncate">
+                      {currentAnalysis?.roleSnapshot.title || 'Analyzing Profile...'}
+                    </p>
+                  </motion.div>
+                )}
+             </div>
           </div>
-        </div>
-      </aside>
+        </SidebarBody>
+      </Sidebar>
 
       {/* Main Content */}
       <div className="flex-1 h-screen relative flex flex-col min-w-0 overflow-hidden">
         <IsometricBackground />
         <div className="h-16 flex items-center justify-between px-4 lg:px-8 border-b shrink-0 bg-background/50 backdrop-blur-sm z-20">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:flex text-muted-foreground hover:text-foreground"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-          >
-            <Menu className="w-6 h-6" />
-          </Button>
+          <div className="lg:hidden" /> {/* Spacer for mobile toggle which is now handled by Sidebar component */}
           <AnimatedThemeToggler className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors ml-auto" />
         </div>
         <main className="flex-1 overflow-y-auto" ref={scrollRef as any} onScroll={handleScroll}>
