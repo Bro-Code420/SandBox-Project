@@ -138,37 +138,6 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* Trend Analysis */}
-      {allAnalyses.length > 1 && (
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Score Trend</CardTitle>
-            <CardDescription>
-              Your readiness score over time
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-4 h-32">
-              {[...allAnalyses].slice(0, 5).reverse().map((analysis) => (
-                <div key={analysis._id} className="flex-1 flex flex-col items-center gap-2">
-                  <div
-                    className="w-full bg-primary/20 dark:bg-secondary/30 rounded-t-lg transition-all"
-                    style={{ height: `${analysis.readinessScore}%` }}
-                  >
-                    <div
-                      className="w-full bg-primary dark:bg-[#a4c3b2] rounded-t-lg"
-                      style={{ height: `${analysis.readinessScore}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {analysis.readinessScore}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

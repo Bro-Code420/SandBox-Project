@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { DashboardOverviewSkeleton } from '@/components/dashboard/dashboard-skeleton'
 import NumberTicker from '@/components/dashboard/number-ticker'
+import { ScoreTrendChart } from '@/components/dashboard/score-trend-chart'
 
 function getStatusConfig(status: string) {
   switch (status) {
@@ -54,8 +55,9 @@ function getStatusConfig(status: string) {
 export default function DashboardPage() {
   const currentAnalysis = useQuery(api.analysis.getLiveProfile)
   const jobRole = useQuery(api.onboarding.getJobRole)
+  const allAnalyses = useQuery(api.analysis.listAnalyses)
 
-  if (currentAnalysis === undefined || jobRole === undefined) {
+  if (currentAnalysis === undefined || jobRole === undefined || allAnalyses === undefined) {
     return <DashboardOverviewSkeleton />
   }
 
@@ -294,6 +296,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Progress Chart */}
+      <ScoreTrendChart 
+        analyses={allAnalyses} 
+        liveScore={currentAnalysis.readinessScore} 
+      />
 
       {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
