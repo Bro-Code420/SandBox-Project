@@ -27,7 +27,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Star,
-  Trophy
+  Trophy,
+  FileText
 } from 'lucide-react'
 
 const navItems = [
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/dashboard/gaps', label: 'Skill Gaps', icon: ScanSearch },
   { href: '/dashboard/roadmap', label: '30-Day Roadmap', icon: Map },
   { href: '/dashboard/tests', label: 'Skill Tests', icon: BrainCircuit },
+  { href: '/dashboard/resume', label: 'Resume Builder', icon: FileText },
   { href: '/dashboard/history', label: 'Analysis History', icon: Clock },
   { href: '/dashboard/summary', label: 'Summary', icon: ScrollText },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },

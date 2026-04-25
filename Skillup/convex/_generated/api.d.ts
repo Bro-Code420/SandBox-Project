@@ -12,6 +12,7 @@ import type * as analysis from "../analysis.js";
 import type * as dailyChallenge from "../dailyChallenge.js";
 import type * as onboarding from "../onboarding.js";
 import type * as ranking from "../ranking.js";
+import type * as resume from "../resume.js";
 import type * as roadmap from "../roadmap.js";
 import type * as seed from "../seed.js";
 import type * as tests from "../tests.js";
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   dailyChallenge: typeof dailyChallenge;
   onboarding: typeof onboarding;
   ranking: typeof ranking;
+  resume: typeof resume;
   roadmap: typeof roadmap;
   seed: typeof seed;
   tests: typeof tests;

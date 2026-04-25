@@ -152,4 +152,16 @@ export default defineSchema({
         next_difficulty: v.optional(v.string()), // "beginner", "intermediate", "advanced"
         last_test_date: v.optional(v.number()), // timestamp to track streak
     }).index("by_userId", ["userId"]),
+
+    resumes: defineTable({
+        userId: v.string(),
+        fullName: v.string(),
+        email: v.string(),
+        phone: v.string(),
+        location: v.string(),
+        summary: v.string(),
+        experience: v.string(),
+        education: v.string(),
+        template: v.string(),
+    }).index("by_userId", ["userId"]),
 });
