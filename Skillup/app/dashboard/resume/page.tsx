@@ -9,12 +9,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FileText, Download, Save, CheckCircle2, User, Mail, Phone, MapPin, Briefcase, GraduationCap, Sparkles, AlertCircle, TrendingUp, Target, Activity } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FileText, Download, Save, CheckCircle2, User, Mail, Phone, MapPin, Briefcase, GraduationCap, Sparkles, AlertCircle, TrendingUp, Target, Activity, Trophy, Zap, Check, Gauge } from 'lucide-react'
 import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+
+const BentoTile = ({ children, className = "", title, icon: Icon, delay = 0 }: any) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay }}
+        className={`bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-3xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/50 dark:hover:bg-slate-900/50 transition-all duration-300 group ${className}`}
+    >
+        {title && (
+            <div className="flex items-center gap-2 mb-4">
+                {Icon && <Icon className="w-5 h-5 text-primary/70 group-hover:text-primary transition-colors" />}
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80">{title}</h3>
+            </div>
+        )}
+        {children}
+    </motion.div>
+);
 
 export default function ResumeBuilderPage() {
     const { user } = useUser()
@@ -265,72 +283,128 @@ export default function ResumeBuilderPage() {
             </div>
 
             {outcome && (
-                <Card className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm mb-8 no-print">
-                    <CardHeader className="pb-4 border-b border-emerald-100 dark:border-emerald-900">
-                        <CardTitle className="text-xl flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-                            <Activity className="w-6 h-6" /> Career Outcome Prediction
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="space-y-6">
-                                <div>
-                                    <div className="flex justify-between items-center mb-2">
-                                        <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-base">Interview Probability</p>
-                                        <span className="font-bold text-emerald-600 text-lg">{outcome.interview_probability}%</span>
-                                    </div>
-                                    <Progress value={outcome.interview_probability} className="h-3 bg-emerald-200 [&>div]:bg-emerald-600" />
-                                </div>
-                                
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
-                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Top Percentile</p>
-                                        <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">Top {outcome.percentile}%</p>
-                                    </div>
-                                    <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
-                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Skill Risks</p>
-                                        <p className="text-2xl font-bold text-red-600">{outcome.risk_skills.length}</p>
-                                    </div>
-                                    <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
-                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Unverified</p>
-                                        <p className="text-2xl font-bold text-amber-600">{outcome.unverified_skills?.length || 0}</p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="font-semibold mb-3 flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-amber-600"/> Missing from Top Candidates</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {outcome.missing_from_top.map((s: string, i: number) => (
-                                            <Badge variant="secondary" key={i} className="px-3 py-1 text-sm">{s}</Badge>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div className="space-y-3">
-                                    <p className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5"><Target className="w-4 h-4" /> What-If Simulation</p>
-                                    <div className="space-y-2">
-                                        {outcome.simulations.map((sim: any, i: number) => (
-                                            <div key={i} className="bg-white dark:bg-black/20 p-3 rounded-lg border border-emerald-50 dark:border-emerald-900 flex justify-between items-center shadow-sm">
-                                                <span className="text-sm font-medium">Learn {sim.skill}</span>
-                                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">+{sim.new_probability - outcome.interview_probability}% Prob</Badge>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="bg-emerald-100/50 dark:bg-emerald-900/30 p-5 rounded-xl border border-emerald-200 dark:border-emerald-800 h-full">
-                                    <p className="text-emerald-800 dark:text-emerald-300 font-semibold mb-2">AI Verdict</p>
-                                    <p className="text-sm text-emerald-700/90 dark:text-emerald-400/90 mb-4">{outcome.insights.summary}</p>
-                                    <ul className="text-sm space-y-2 list-disc list-inside text-emerald-800 dark:text-emerald-300 font-medium">
-                                        {outcome.insights.next_steps.map((step: string, i: number) => <li key={i}>{step}</li>)}
-                                    </ul>
-                                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-10 no-print">
+                    {/* Interview Probability - Big Tile */}
+                    <BentoTile title="Interview Probability" icon={Target} className="md:col-span-2 md:row-span-2 flex flex-col justify-center">
+                        <div className="relative flex items-center justify-center py-4">
+                            <svg className="w-40 h-40 transform -rotate-90">
+                                <circle
+                                    cx="80" cy="80" r="70"
+                                    fill="none" stroke="currentColor" strokeWidth="12"
+                                    className="text-emerald-100 dark:text-emerald-900/30"
+                                />
+                                <motion.circle
+                                    cx="80" cy="80" r="70"
+                                    fill="none" stroke="currentColor" strokeWidth="12"
+                                    strokeDasharray={440}
+                                    initial={{ strokeDashoffset: 440 }}
+                                    animate={{ strokeDashoffset: 440 - (440 * outcome.interview_probability) / 100 }}
+                                    transition={{ duration: 1.5, ease: "easeOut" }}
+                                    className="text-emerald-600"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <motion.span 
+                                    initial={{ opacity: 0, scale: 0.5 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="text-5xl font-black text-emerald-700 dark:text-emerald-400"
+                                >
+                                    {outcome.interview_probability}%
+                                </motion.span>
+                                <span className="text-xs font-bold text-emerald-600/70 uppercase tracking-tighter">Chance</span>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                        <p className="text-sm text-center text-muted-foreground mt-4 font-medium italic">"{outcome.insights.summary.split('.')[0]}."</p>
+                    </BentoTile>
+
+                    {/* ATS Score Tile */}
+                    <BentoTile title="ATS Alignment" icon={Zap} className="md:col-span-2">
+                        <div className="flex items-end justify-between">
+                            <div>
+                                <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">{insights?.ats_score || 60}%</span>
+                                <p className="text-xs font-bold text-muted-foreground uppercase mt-1">Optimization Level</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                                {insights?.ats_score >= 80 ? (
+                                    <Badge className="bg-emerald-500 hover:bg-emerald-600">Optimal</Badge>
+                                ) : (
+                                    <Badge variant="secondary" className="bg-amber-100 text-amber-700">Needs Work</Badge>
+                                )}
+                            </div>
+                        </div>
+                    </BentoTile>
+
+                    {/* Rank Tile */}
+                    <BentoTile title="Market Ranking" icon={Trophy} className="md:col-span-2">
+                        <div className="flex items-end justify-between">
+                            <div>
+                                <span className="text-4xl font-black text-amber-600 dark:text-amber-400">Top {outcome.percentile}%</span>
+                                <p className="text-xs font-bold text-muted-foreground uppercase mt-1">Across all candidates</p>
+                            </div>
+                            <Trophy className="w-10 h-10 text-amber-500/20" />
+                        </div>
+                    </BentoTile>
+
+                    {/* Risk Skills */}
+                    <BentoTile title="Critical Risks" icon={AlertCircle} className="md:col-span-1 border-red-100 dark:border-red-900/30">
+                        <div className="flex flex-col items-center justify-center">
+                            <span className="text-4xl font-black text-red-600">{outcome.risk_skills.length}</span>
+                            <span className="text-[10px] font-bold text-red-500/70 uppercase mt-1 text-center leading-tight">Weak Skills Identified</span>
+                        </div>
+                    </BentoTile>
+
+                    {/* Unverified Skills */}
+                    <BentoTile title="Unverified" icon={CheckCircle2} className="md:col-span-1 border-amber-100 dark:border-amber-900/30">
+                        <div className="flex flex-col items-center justify-center">
+                            <span className="text-4xl font-black text-amber-600">{outcome.unverified_skills?.length || 0}</span>
+                            <span className="text-[10px] font-bold text-amber-500/70 uppercase mt-1 text-center leading-tight">Proofs Missing</span>
+                        </div>
+                    </BentoTile>
+
+                    {/* Missing Skills List */}
+                    <BentoTile title="Priority Skills" icon={Activity} className="md:col-span-2">
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                            {outcome.missing_from_top.slice(0, 5).map((s: string, i: number) => (
+                                <Badge variant="secondary" key={i} className="text-[10px] py-0 px-2 bg-slate-100 dark:bg-slate-800 border-none">{s}</Badge>
+                            ))}
+                        </div>
+                    </BentoTile>
+
+                    {/* What-If Simulator */}
+                    <BentoTile title="What-If Simulation" icon={Gauge} className="md:col-span-3">
+                        <div className="space-y-3">
+                            {outcome.simulations.map((sim: any, i: number) => (
+                                <div key={i} className="flex items-center justify-between bg-white/30 dark:bg-black/20 p-2 rounded-xl border border-white/40">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                        <span className="text-xs font-bold">Acquire {sim.skill}</span>
+                                    </div>
+                                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] h-5">
+                                        +{sim.new_probability - outcome.interview_probability}% Probability
+                                    </Badge>
+                                </div>
+                            ))}
+                        </div>
+                    </BentoTile>
+
+                    {/* AI Verdict & Roadmap */}
+                    <BentoTile title="AI Verdict & Next Steps" icon={Sparkles} className="md:col-span-3 bg-indigo-600/5 dark:bg-indigo-400/5">
+                        <p className="text-sm font-medium leading-relaxed mb-4 text-slate-700 dark:text-slate-300">
+                            {outcome.insights.summary}
+                        </p>
+                        <div className="space-y-2">
+                            {outcome.insights.next_steps.slice(0, 2).map((step: string, i: number) => (
+                                <div key={i} className="flex items-start gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400">
+                                    <div className="mt-1 w-3 h-3 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center flex-shrink-0">
+                                        <Check className="w-2 h-2" />
+                                    </div>
+                                    {step}
+                                </div>
+                            ))}
+                        </div>
+                    </BentoTile>
+                </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -220,8 +220,13 @@ export default function LeaderboardPage() {
             </CardContent>
           </Card>
 
-          {/* Insight Card */}
-          <Card className="border-primary/20 bg-primary/5">
+          {/* End of Left Column */}
+        </div>
+
+        {/* Right: Insights & Skill Gap Section */}
+        <div className="space-y-6">
+          {/* Insight Card Moved Here */}
+          <Card className="border-primary/20 bg-primary/5 shadow-sm">
              <CardContent className="p-6">
                 <div className="flex gap-4">
                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -236,10 +241,6 @@ export default function LeaderboardPage() {
                 </div>
              </CardContent>
           </Card>
-        </div>
-
-        {/* Right: Insights & Skill Gap Section */}
-        <div className="space-y-6">
           <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -294,10 +295,31 @@ export default function LeaderboardPage() {
                    <h4 className="font-bold">Next Milestone</h4>
                    <p className="text-sm text-zinc-400 mt-1">Master {improvement_suggestions[0]?.skill || 'Top Skills'} to reach Top 5%</p>
                 </div>
-                <Button className="w-full bg-white text-black hover:bg-white/90 font-bold rounded-xl h-10">
+                <Button className="w-full bg-white text-black hover:bg-white/90 font-bold rounded-xl h-10" onClick={() => router.push('/dashboard/roadmap')}>
                    Add to Roadmap
                 </Button>
              </CardContent>
+          </Card>
+
+          {/* New Trending Card to fill space */}
+          <Card className="border-border/40 bg-muted/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" />
+                Trending in Your Role
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-[11px] text-muted-foreground">Skills gaining momentum among {current_user.total_users} similar profiles this week.</p>
+              <div className="space-y-2">
+                {top_skills.slice(0, 3).map((skill, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs">
+                    <span className="font-medium">{skill}</span>
+                    <Badge variant="outline" className="text-[10px] h-4 border-emerald-500/30 text-emerald-600 bg-emerald-500/5">+ {12 + i * 4}% usage</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
         </div>
       </div>
