@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion'
 import { FileText, Download, Save, CheckCircle2, User, Mail, Phone, MapPin, Briefcase, GraduationCap, Sparkles, AlertCircle, TrendingUp, Target, Activity, Trophy, Zap, Check, Gauge } from 'lucide-react'
 import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,22 +17,50 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 
-const BentoTile = ({ children, className = "", title, icon: Icon, delay = 0 }: any) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay }}
-        className={`bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-3xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/50 dark:hover:bg-slate-900/50 transition-all duration-300 group ${className}`}
-    >
-        {title && (
-            <div className="flex items-center gap-2 mb-4">
-                {Icon && <Icon className="w-5 h-5 text-primary/70 group-hover:text-primary transition-colors" />}
-                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80">{title}</h3>
+const CountUp = ({ value, duration = 2 }: { value: number, duration?: number }) => {
+    const spring = useSpring(0, { bounce: 0, duration: duration * 1000 });
+    const display = useTransform(spring, (current) => Math.round(current));
+    
+    useEffect(() => {
+        spring.set(value);
+    }, [value, spring]);
+
+    return <motion.span>{display}</motion.span>;
+};
+
+const BentoTile = ({ children, className = "", title, icon: Icon, delay = 0, glow = false, glowColor = "emerald" }: any) => {
+    const glowStyles = glow 
+        ? glowColor === "emerald" 
+            ? "shadow-[0_0_20px_rgba(16,185,129,0.15)] border-emerald-500/30 dark:border-emerald-500/20" 
+            : "shadow-[0_0_20px_rgba(79,70,229,0.15)] border-indigo-500/30 dark:border-indigo-500/20"
+        : "";
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay }}
+            className={`bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-3xl p-6 shadow-xl hover:shadow-2xl hover:bg-white/50 dark:hover:bg-slate-900/50 transition-all duration-300 group relative overflow-hidden ${glowStyles} ${className}`}
+        >
+            {glow && (
+                <motion.div 
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                    className={`absolute inset-0 bg-gradient-to-br ${glowColor === "emerald" ? "from-emerald-500/5 to-transparent" : "from-indigo-500/5 to-transparent"} pointer-events-none`} 
+                />
+            )}
+            {title && (
+                <div className="flex items-center gap-2 mb-4 relative z-10">
+                    {Icon && <Icon className="w-5 h-5 text-primary/70 group-hover:text-primary transition-colors" />}
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/80">{title}</h3>
+                </div>
+            )}
+            <div className="relative z-10">
+                {children}
             </div>
-        )}
-        {children}
-    </motion.div>
-);
+        </motion.div>
+    );
+};
 
 export default function ResumeBuilderPage() {
     const { user } = useUser()
@@ -285,7 +313,13 @@ export default function ResumeBuilderPage() {
             {outcome && (
                 <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-10 no-print">
                     {/* Interview Probability - Big Tile */}
-                    <BentoTile title="Interview Probability" icon={Target} className="md:col-span-2 md:row-span-2 flex flex-col justify-center">
+                    <BentoTile 
+                        title="Interview Probability" 
+                        icon={Target} 
+                        className="md:col-span-2 md:row-span-2 flex flex-col justify-center"
+                        glow={outcome.interview_probability >= 75}
+                        glowColor="emerald"
+                    >
                         <div className="relative flex items-center justify-center py-4">
                             <svg className="w-40 h-40 transform -rotate-90">
                                 <circle
@@ -306,11 +340,9 @@ export default function ResumeBuilderPage() {
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <motion.span 
-                                    initial={{ opacity: 0, scale: 0.5 }}
-                                    animate={{ opacity: 1, scale: 1 }}
                                     className="text-5xl font-black text-emerald-700 dark:text-emerald-400"
                                 >
-                                    {outcome.interview_probability}%
+                                    <CountUp value={outcome.interview_probability} />%
                                 </motion.span>
                                 <span className="text-xs font-bold text-emerald-600/70 uppercase tracking-tighter">Chance</span>
                             </div>
@@ -319,14 +351,22 @@ export default function ResumeBuilderPage() {
                     </BentoTile>
 
                     {/* ATS Score Tile */}
-                    <BentoTile title="ATS Alignment" icon={Zap} className="md:col-span-2">
+                    <BentoTile 
+                        title="ATS Alignment" 
+                        icon={Zap} 
+                        className="md:col-span-2"
+                        glow={(insights?.ats_score || 0) >= 80}
+                        glowColor="indigo"
+                    >
                         <div className="flex items-end justify-between">
                             <div>
-                                <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">{insights?.ats_score || 60}%</span>
+                                <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400">
+                                    <CountUp value={insights?.ats_score || 60} />%
+                                </span>
                                 <p className="text-xs font-bold text-muted-foreground uppercase mt-1">Optimization Level</p>
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                                {insights?.ats_score >= 80 ? (
+                                {(insights?.ats_score || 0) >= 80 ? (
                                     <Badge className="bg-emerald-500 hover:bg-emerald-600">Optimal</Badge>
                                 ) : (
                                     <Badge variant="secondary" className="bg-amber-100 text-amber-700">Needs Work</Badge>
@@ -336,10 +376,18 @@ export default function ResumeBuilderPage() {
                     </BentoTile>
 
                     {/* Rank Tile */}
-                    <BentoTile title="Market Ranking" icon={Trophy} className="md:col-span-2">
+                    <BentoTile 
+                        title="Market Ranking" 
+                        icon={Trophy} 
+                        className="md:col-span-2"
+                        glow={outcome.percentile >= 90}
+                        glowColor="emerald"
+                    >
                         <div className="flex items-end justify-between">
                             <div>
-                                <span className="text-4xl font-black text-amber-600 dark:text-amber-400">Top {outcome.percentile}%</span>
+                                <span className="text-4xl font-black text-amber-600 dark:text-amber-400">
+                                    Top <CountUp value={outcome.percentile} />%
+                                </span>
                                 <p className="text-xs font-bold text-muted-foreground uppercase mt-1">Across all candidates</p>
                             </div>
                             <Trophy className="w-10 h-10 text-amber-500/20" />
