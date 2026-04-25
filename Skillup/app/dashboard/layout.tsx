@@ -36,11 +36,13 @@ const navItems = [
   { href: '/dashboard/explain', label: 'Why This Score?', icon: Lightbulb },
   { href: '/dashboard/gaps', label: 'Skill Gaps', icon: ScanSearch },
   { href: '/dashboard/roadmap', label: '30-Day Roadmap', icon: Map },
+  { href: '/dashboard/tests', label: 'Skill Tests', icon: BrainCircuit },
   { href: '/dashboard/history', label: 'Analysis History', icon: Clock },
   { href: '/dashboard/summary', label: 'Summary', icon: ScrollText },
   { href: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/dashboard/membership', label: 'Membership', icon: Star },
 ]
+
 
 import { IsometricBackground } from '@/components/ui/isometric-background'
 

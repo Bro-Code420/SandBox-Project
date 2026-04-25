@@ -85,4 +85,71 @@ export default defineSchema({
             completed: v.optional(v.boolean()),
         })),
     }).index("by_userId", ["userId"]),
+    
+    tests: defineTable({
+        userId: v.string(),
+        skill: v.string(),
+        difficulty: v.string(),
+        questions: v.array(v.object({
+            type: v.string(), // "mcq" | "concept"
+            question: v.string(),
+            options: v.optional(v.array(v.string())),
+            correct_answer: v.optional(v.string()),
+            expected_points: v.optional(v.array(v.string())),
+        })),
+        createdAt: v.any(),
+    }).index("by_userId", ["userId"]),
+
+    test_attempts: defineTable({
+        userId: v.string(),
+        testId: v.id("tests"),
+        skill: v.string(),
+        score: v.number(),
+        confidence: v.number(),
+        strengths: v.array(v.string()),
+        weaknesses: v.array(v.string()),
+        feedback: v.string(),
+        readiness_impact: v.optional(v.number()),
+        completedAt: v.any(),
+    }).index("by_userId", ["userId"]).index("by_userId_and_skill", ["userId", "skill"]),
+
+    daily_tests: defineTable({
+        userId: v.string(),
+        day: v.number(),
+        skill: v.string(),
+        difficulty: v.string(),
+        questions: v.array(v.object({
+            type: v.string(), // "mcq" | "concept" | "coding"
+            question: v.string(),
+            options: v.optional(v.array(v.string())),
+            correct_answer: v.optional(v.string()),
+            expected_points: v.optional(v.array(v.string())),
+        })),
+        status: v.string(), // "locked", "available", "completed"
+        createdAt: v.any(),
+    }).index("by_userId", ["userId"]).index("by_userId_and_day", ["userId", "day"]),
+
+    test_results: defineTable({
+        userId: v.string(),
+        testId: v.id("daily_tests"),
+        day: v.number(),
+        skill: v.string(),
+        score: v.number(),
+        confidence: v.number(),
+        strengths: v.array(v.string()),
+        weaknesses: v.array(v.string()),
+        feedback: v.string(),
+        readiness_impact: v.optional(v.number()),
+        attempted_at: v.any(),
+    }).index("by_userId", ["userId"]).index("by_userId_and_day", ["userId", "day"]),
+
+    user_progress: defineTable({
+        userId: v.string(),
+        current_day: v.number(),
+        streak: v.number(),
+        longest_streak: v.number(),
+        readiness_score: v.number(),
+        next_difficulty: v.optional(v.string()), // "beginner", "intermediate", "advanced"
+        last_test_date: v.optional(v.number()), // timestamp to track streak
+    }).index("by_userId", ["userId"]),
 });
