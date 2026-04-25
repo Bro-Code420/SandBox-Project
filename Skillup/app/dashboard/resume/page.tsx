@@ -9,11 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FileText, Download, Save, CheckCircle2, User, Mail, Phone, MapPin, Briefcase, GraduationCap, Sparkles, AlertCircle, TrendingUp } from 'lucide-react'
+import { FileText, Download, Save, CheckCircle2, User, Mail, Phone, MapPin, Briefcase, GraduationCap, Sparkles, AlertCircle, TrendingUp, Target, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 
 export default function ResumeBuilderPage() {
     const { user } = useUser()
@@ -23,14 +24,17 @@ export default function ResumeBuilderPage() {
     
     const saveResumeMutation = useMutation(api.resume.saveResume)
     const optimizeResumeMutation = useMutation(api.resume.optimizeResume)
+    const predictOutcomeMutation = useMutation(api.resume.predictCareerOutcome)
 
     const [isEditing, setIsEditing] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [isOptimizing, setIsOptimizing] = useState(false)
+    const [isPredicting, setIsPredicting] = useState(false)
     const [jobDescription, setJobDescription] = useState("")
     const [targetRoleVariant, setTargetRoleVariant] = useState("Software Engineer")
     
     const [insights, setInsights] = useState<any>(null)
+    const [outcome, setOutcome] = useState<any>(null)
     
     const [resumeData, setResumeData] = useState({
         fullName: '',
@@ -142,6 +146,25 @@ export default function ResumeBuilderPage() {
         }
     }
 
+    const handlePredictOutcome = async () => {
+        setIsPredicting(true)
+        toast("Running Career Prediction Engine...")
+        try {
+            const atsScore = insights?.ats_score || 60;
+            const result = await predictOutcomeMutation({
+                userId: user.id,
+                targetRole: targetRoleVariant,
+                atsScore
+            })
+            setOutcome(result)
+            toast.success("Outcome prediction generated successfully!")
+        } catch (error) {
+            toast.error("Failed to run prediction engine.")
+        } finally {
+            setIsPredicting(false)
+        }
+    }
+
     // Template specific classes
     const getTemplateStyles = () => {
         switch(resumeData.template) {
@@ -222,14 +245,83 @@ export default function ResumeBuilderPage() {
                     <Button onClick={handleOptimize} disabled={isOptimizing} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
                         <Sparkles className="w-4 h-4 mr-2" /> {isOptimizing ? "Optimizing..." : "AI Optimize"}
                     </Button>
+                    <Button onClick={handlePredictOutcome} disabled={isPredicting} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md">
+                        <Target className="w-4 h-4 mr-2" /> {isPredicting ? "Predicting..." : "Predict Outcomes"}
+                    </Button>
                     <Button onClick={handlePrint} className="bg-primary text-primary-foreground shadow-md">
                         <Download className="w-4 h-4 mr-2" /> Download PDF
                     </Button>
                 </div>
             </div>
 
+            {outcome && (
+                <Card className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm mb-8 no-print">
+                    <CardHeader className="pb-4 border-b border-emerald-100 dark:border-emerald-900">
+                        <CardTitle className="text-xl flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                            <Activity className="w-6 h-6" /> Career Outcome Prediction
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-base">Interview Probability</p>
+                                        <span className="font-bold text-emerald-600 text-lg">{outcome.interview_probability}%</span>
+                                    </div>
+                                    <Progress value={outcome.interview_probability} className="h-3 bg-emerald-200 [&>div]:bg-emerald-600" />
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Top Percentile</p>
+                                        <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">Top {outcome.percentile}%</p>
+                                    </div>
+                                    <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Skill Risks</p>
+                                        <p className="text-2xl font-bold text-red-600">{outcome.risk_skills.length}</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="font-semibold mb-3 flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-amber-600"/> Missing from Top Candidates</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {outcome.missing_from_top.map((s: string, i: number) => (
+                                            <Badge variant="secondary" key={i} className="px-3 py-1 text-sm">{s}</Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <p className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5"><Target className="w-4 h-4" /> What-If Simulation</p>
+                                    <div className="space-y-2">
+                                        {outcome.simulations.map((sim: any, i: number) => (
+                                            <div key={i} className="bg-white dark:bg-black/20 p-3 rounded-lg border border-emerald-50 dark:border-emerald-900 flex justify-between items-center shadow-sm">
+                                                <span className="text-sm font-medium">Learn {sim.skill}</span>
+                                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">+{sim.new_probability - outcome.interview_probability}% Prob</Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-emerald-100/50 dark:bg-emerald-900/30 p-5 rounded-xl border border-emerald-200 dark:border-emerald-800 h-full">
+                                    <p className="text-emerald-800 dark:text-emerald-300 font-semibold mb-2">AI Verdict</p>
+                                    <p className="text-sm text-emerald-700/90 dark:text-emerald-400/90 mb-4">{outcome.insights.summary}</p>
+                                    <ul className="text-sm space-y-2 list-disc list-inside text-emerald-800 dark:text-emerald-300 font-medium">
+                                        {outcome.insights.next_steps.map((step: string, i: number) => <li key={i}>{step}</li>)}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 space-y-6 no-print">
+                {(isEditing || insights) && (
+                    <div className="lg:col-span-1 space-y-6 no-print">
                     
                     {insights && (
                         <Card className="border-indigo-200 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm">
@@ -266,6 +358,8 @@ export default function ResumeBuilderPage() {
                             </CardContent>
                         </Card>
                     )}
+
+
 
                     {isEditing && (
                         <Card className="border-primary/20 shadow-md">
@@ -344,8 +438,9 @@ export default function ResumeBuilderPage() {
                         </Card>
                     )}
                 </div>
+                )}
 
-                <div className={`transition-all duration-300 ${isEditing || insights ? 'lg:col-span-2' : 'lg:col-span-3 max-w-4xl mx-auto w-full'}`}>
+                <div className={`transition-all duration-300 ${(isEditing || insights) ? 'lg:col-span-2' : 'lg:col-span-3 max-w-4xl mx-auto w-full'}`}>
                     <Card className="shadow-2xl overflow-hidden border-border print-section bg-white min-h-[1122px] w-full" ref={printRef}>
                         <div className={`p-8 md:p-12 ${styles.container}`}>
                             
