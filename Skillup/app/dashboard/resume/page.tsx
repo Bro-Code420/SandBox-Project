@@ -101,9 +101,10 @@ export default function ResumeBuilderPage() {
     const handleSave = async () => {
         setIsSaving(true)
         try {
+            const { _id, _creationTime, ...cleanData } = resumeData as any;
             await saveResumeMutation({
                 userId: user.id,
-                ...resumeData
+                ...cleanData
             })
             setIsEditing(false)
             toast.success("Resume saved successfully.")
@@ -119,9 +120,10 @@ export default function ResumeBuilderPage() {
         toast("Analyzing resume...", { description: "Applying AI optimizations and calculating ATS score." })
         try {
             // First save current state so optimization runs on latest text
+            const { _id, _creationTime, ...cleanData } = resumeData as any;
             await saveResumeMutation({
                 userId: user.id,
-                ...resumeData
+                ...cleanData
             })
 
             const result = await optimizeResumeMutation({
@@ -235,22 +237,30 @@ export default function ResumeBuilderPage() {
                         AI-powered resume builder tailored to real industry readiness.
                     </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button variant={isEditing ? "outline" : "default"} onClick={() => setIsEditing(!isEditing)}>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button variant={isEditing ? "outline" : "default"} onClick={() => setIsEditing(!isEditing)} className="rounded-full h-9 shadow-sm border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors">
                         {isEditing ? "Preview Mode" : "Edit Details"}
                     </Button>
-                    <Button onClick={handleSave} disabled={isSaving} variant="secondary">
-                        <Save className="w-4 h-4 mr-2" /> {isSaving ? "Saving..." : "Save Resume"}
-                    </Button>
-                    <Button onClick={handleOptimize} disabled={isOptimizing} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                        <Sparkles className="w-4 h-4 mr-2" /> {isOptimizing ? "Optimizing..." : "AI Optimize"}
-                    </Button>
-                    <Button onClick={handlePredictOutcome} disabled={isPredicting} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md">
-                        <Target className="w-4 h-4 mr-2" /> {isPredicting ? "Predicting..." : "Predict Outcomes"}
-                    </Button>
-                    <Button onClick={handlePrint} className="bg-primary text-primary-foreground shadow-md">
-                        <Download className="w-4 h-4 mr-2" /> Download PDF
-                    </Button>
+                    
+                    <div className="h-8 w-px bg-emerald-100 hidden md:block mx-1" />
+                    
+                    <div className="flex items-center gap-2 bg-indigo-50/50 p-1 rounded-xl no-print">
+                        <Button onClick={handleOptimize} disabled={isOptimizing} size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md h-8 text-xs">
+                            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> {isOptimizing ? "Optimizing..." : "AI Optimize"}
+                        </Button>
+                        <Button onClick={handlePredictOutcome} disabled={isPredicting} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md h-8 text-xs">
+                            <Target className="w-3.5 h-3.5 mr-1.5" /> {isPredicting ? "Predicting..." : "Predict Outcomes"}
+                        </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-auto">
+                        <Button onClick={handleSave} disabled={isSaving} variant="outline" size="sm" className="h-8 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
+                            <Save className="w-3.5 h-3.5 mr-1.5" /> {isSaving ? "Saving..." : "Save"}
+                        </Button>
+                        <Button onClick={handlePrint} size="sm" className="bg-slate-800 hover:bg-slate-900 text-white shadow-md h-8">
+                            <Download className="w-3.5 h-3.5 mr-1.5" /> PDF
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -272,7 +282,7 @@ export default function ResumeBuilderPage() {
                                     <Progress value={outcome.interview_probability} className="h-3 bg-emerald-200 [&>div]:bg-emerald-600" />
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
                                         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Top Percentile</p>
                                         <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">Top {outcome.percentile}%</p>
@@ -280,6 +290,10 @@ export default function ResumeBuilderPage() {
                                     <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
                                         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Skill Risks</p>
                                         <p className="text-2xl font-bold text-red-600">{outcome.risk_skills.length}</p>
+                                    </div>
+                                    <div className="bg-white dark:bg-black/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Unverified</p>
+                                        <p className="text-2xl font-bold text-amber-600">{outcome.unverified_skills?.length || 0}</p>
                                     </div>
                                 </div>
 

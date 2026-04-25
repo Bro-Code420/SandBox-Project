@@ -83,7 +83,7 @@ export const optimizeResume = mutation({
             .withIndex("by_userId", (q) => q.eq("userId", args.userId))
             .first();
 
-        const targetRole = args.targetRole || analysis?.roleSnapshot?.title || "Software Engineer";
+        const targetRole = args.targetRole || (analysis as any)?.roleSnapshot?.title || "Software Engineer";
         const readinessScore = progress?.readiness_score || 50;
 
         // Smart Bullet Generator & Text Optimizer (Heuristic ML Simulation)
@@ -139,7 +139,7 @@ export const optimizeResume = mutation({
         }
 
         const roleKeywords = targetRole.split(" ");
-        const hasKeywords = roleKeywords.some(k => resume.summary.includes(k) || newExperience.includes(k));
+        const hasKeywords = roleKeywords.some((k: string) => resume.summary.includes(k) || newExperience.includes(k));
         if (hasKeywords) {
             atsScore += 10;
         } else {
@@ -212,13 +212,14 @@ export const predictCareerOutcome = mutation({
 
         // 1. Calculate Leaderboard Rank and Total Users
         const allProgress = await ctx.db.query("user_progress").collect();
-        const total_users = Math.max(allProgress.length, 10); // Assume at least 10 users for mock
+        const safe_total_users = Math.max(allProgress.length, 10); // Assume at least 10 users for mock
         const sortedProgress = [...allProgress].sort((a, b) => b.readiness_score - a.readiness_score);
         let rank = sortedProgress.findIndex(p => p.userId === args.userId) + 1;
-        if (rank === 0) rank = Math.floor(total_users / 2); // Default to middle if not found
+        if (rank === 0) rank = Math.floor(safe_total_users / 2); // Default to middle if not found
 
         const readiness_score = progress?.readiness_score || 50;
-        const percentile = Math.round(((total_users - rank + 1) / total_users) * 100);
+        const percentile = Math.round(((safe_total_users - rank + 0.5) / safe_total_users) * 100);
+        const final_percentile = Math.min(99, Math.max(1, percentile));
 
         // 2. Identify Top Skills in Role & Missing
         const matchedSkills = analysis?.matchedSkills || [];
@@ -227,28 +228,32 @@ export const predictCareerOutcome = mutation({
 
         // 3. Skill Validation (Truth Engine)
         const risk_skills: string[] = [];
-        matchedSkills.forEach(skill => {
-            const testsForSkill = testResults.filter(t => t.skill === skill);
+        const unverified_skills: string[] = [];
+
+        matchedSkills.forEach((skill: string) => {
+            const testsForSkill = testResults.filter((t: any) => t.skill === skill);
             if (testsForSkill.length > 0) {
-                const avgConfidence = testsForSkill.reduce((acc, t) => acc + t.confidence, 0) / testsForSkill.length;
+                const avgConfidence = testsForSkill.reduce((acc: number, t: any) => acc + t.confidence, 0) / testsForSkill.length;
                 if (avgConfidence < 50) risk_skills.push(skill);
+            } else {
+                unverified_skills.push(skill);
             }
         });
 
         // 4. Interview Probability Calculation
-        const atsWeight = 0.4;
-        const readinessWeight = 0.3;
-        const percentileWeight = 0.2;
-        const confidenceWeight = 0.1;
+        const atsWeight = 0.40;
+        const readinessWeight = 0.35;
+        const percentileWeight = 0.10;
+        const confidenceWeight = 0.15;
         
         let avgConfidence = 50;
         if (testResults.length > 0) {
-            avgConfidence = testResults.reduce((acc, t) => acc + t.confidence, 0) / testResults.length;
+            avgConfidence = testResults.reduce((acc: number, t: any) => acc + t.confidence, 0) / testResults.length;
         }
 
         const baseProbability = (args.atsScore * atsWeight) + 
                               (readiness_score * readinessWeight) + 
-                              (percentile * percentileWeight) + 
+                              (final_percentile * percentileWeight) + 
                               (avgConfidence * confidenceWeight);
                               
         const interview_probability = Math.round(Math.min(95, Math.max(5, baseProbability)));
@@ -258,9 +263,14 @@ export const predictCareerOutcome = mutation({
         const skillsToSimulate = analysis?.missingSkills?.slice(0, 3) || missing_from_top.slice(0, 3);
         
         for (const skill of skillsToSimulate) {
-            const simulated_ats = Math.min(100, args.atsScore + 8);
-            const simulated_readiness = Math.min(100, readiness_score + 10);
-            const simulated_percentile = Math.min(99, percentile + 5);
+            const ats_boost = args.atsScore >= 85 ? 2 : 8;
+            const simulated_ats = Math.min(100, args.atsScore + ats_boost);
+            
+            const readiness_boost = readiness_score >= 85 ? 3 : 10;
+            const simulated_readiness = Math.min(100, readiness_score + readiness_boost);
+            
+            const simulated_percentile = Math.min(99, final_percentile + 5);
+            
             const new_probability = Math.round((simulated_ats * atsWeight) + 
                                              (simulated_readiness * readinessWeight) + 
                                              (simulated_percentile * percentileWeight) + 
@@ -271,7 +281,7 @@ export const predictCareerOutcome = mutation({
                 new_ats_score: simulated_ats,
                 new_readiness: simulated_readiness,
                 new_rank: Math.max(1, rank - 2),
-                new_probability: Math.min(98, new_probability)
+                new_probability: Math.min(95, new_probability)
             });
         }
 
@@ -285,21 +295,27 @@ export const predictCareerOutcome = mutation({
             next_steps.push("Improve your resume format to boost your ATS score above 70.");
         } else if (interview_probability < 75) {
             summary = "You have a solid foundation but face stiff competition. Missing a few key market-demanded skills.";
-            next_steps.push(`Learn ${skillsToSimulate[0]} to dramatically boost your interview chances.`);
-            if (risk_skills.length > 0) {
-                next_steps.push(`Retake tests for ${risk_skills.join(", ")} to verify your competence.`);
+            if (skillsToSimulate.length > 0) {
+                next_steps.push(`Learn ${skillsToSimulate[0]} to steadily boost your interview chances.`);
             }
         } else {
-            summary = "You are a highly competitive candidate. Your readiness and ATS scores align perfectly with top industry standards.";
+            summary = "You are a highly competitive candidate. Your readiness and ATS scores align closely with top industry standards.";
             next_steps.push("Start applying directly to senior or specialized roles.");
-            next_steps.push("Focus on system design and architecture to break into the top 1%.");
+        }
+
+        // Add verification steps
+        if (risk_skills.length > 0) {
+            next_steps.push(`Retake tests for ${risk_skills.slice(0, 2).join(", ")} to repair your confidence score.`);
+        } else if (unverified_skills.length > 0) {
+            next_steps.push(`Take skill tests for ${unverified_skills.slice(0, 2).join(", ")} to verify your resume claims.`);
         }
 
         return {
             interview_probability,
-            percentile,
+            percentile: final_percentile,
             missing_from_top,
             risk_skills,
+            unverified_skills,
             simulations,
             insights: {
                 summary,
