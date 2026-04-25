@@ -3,8 +3,10 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInButton, UserButton } from "@clerk/nextjs";
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { api } from "../convex/_generated/api";
 import {
   Crosshair,
@@ -28,6 +30,19 @@ import GlareHover from '@/components/ui/glare-hover'
 import LogoLoop from '@/components/LogoLoop'
 
 export default function LandingPage() {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      router.push('/dashboard')
+    }
+  }, [isLoaded, user, router])
+
+  if (isLoaded && user) {
+    return null // Prevent flash of landing page
+  }
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}

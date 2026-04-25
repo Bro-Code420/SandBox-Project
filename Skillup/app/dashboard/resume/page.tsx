@@ -253,7 +253,7 @@ export default function ResumeBuilderPage() {
     const styles = getTemplateStyles()
 
     return (
-        <div className="space-y-8 max-w-6xl mx-auto pb-12 print-container">
+        <div className="space-y-8 max-w-7xl mx-auto pb-12 print-container">
             <style jsx global>{`
                 @media print {
                     body * {
@@ -410,26 +410,45 @@ export default function ResumeBuilderPage() {
                         </div>
                     </BentoTile>
 
-                    {/* Missing Skills List */}
-                    <BentoTile title="Priority Skills" icon={Activity} className="md:col-span-2">
-                        <div className="flex flex-wrap gap-1.5 mt-1">
-                            {outcome.missing_from_top.slice(0, 5).map((s: string, i: number) => (
-                                <Badge variant="secondary" key={i} className="text-[10px] py-0 px-2 bg-slate-100 dark:bg-slate-800 border-none">{s}</Badge>
+                    {/* missing skills list moved to 1 col */}
+                    <BentoTile title="Gap Priorities" icon={Activity} className="md:col-span-2 lg:col-span-1">
+                        <div className="flex flex-col gap-2 mt-1">
+                            {outcome.missing_from_top.slice(0, 3).map((s: string, i: number) => (
+                                <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground">
+                                    <div className="w-1 h-1 rounded-full bg-red-400" />
+                                    {s}
+                                </div>
                             ))}
                         </div>
                     </BentoTile>
 
+                    {/* NEW: Salary Prediction */}
+                    <BentoTile title="Market Valuation" icon={Trophy} className="md:col-span-2 lg:col-span-1">
+                        <div className="flex flex-col items-center justify-center">
+                            <span className="text-2xl font-black text-indigo-600">$120k</span>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Est. Yearly Base</span>
+                        </div>
+                    </BentoTile>
+
+                    {/* NEW: Job Matches */}
+                    <BentoTile title="Job Matches" icon={Briefcase} className="md:col-span-2 lg:col-span-1">
+                        <div className="flex flex-col items-center justify-center">
+                            <span className="text-2xl font-black text-emerald-600">14</span>
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Active Roles</span>
+                        </div>
+                    </BentoTile>
+
                     {/* What-If Simulator */}
-                    <BentoTile title="What-If Simulation" icon={Gauge} className="md:col-span-3">
+                    <BentoTile title="Skill Impact Simulator" icon={Gauge} className="md:col-span-3">
                         <div className="space-y-3">
                             {outcome.simulations.map((sim: any, i: number) => (
                                 <div key={i} className="flex items-center justify-between bg-white/30 dark:bg-black/20 p-2 rounded-xl border border-white/40">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                        <span className="text-xs font-bold">Acquire {sim.skill}</span>
+                                        <span className="text-xs font-bold">Learn {sim.skill}</span>
                                     </div>
                                     <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] h-5">
-                                        +{sim.new_probability - outcome.interview_probability}% Probability
+                                        +{sim.new_probability - outcome.interview_probability}% Match
                                     </Badge>
                                 </div>
                             ))}
@@ -437,7 +456,7 @@ export default function ResumeBuilderPage() {
                     </BentoTile>
 
                     {/* AI Verdict & Roadmap */}
-                    <BentoTile title="AI Verdict & Next Steps" icon={Sparkles} className="md:col-span-3 bg-indigo-600/5 dark:bg-indigo-400/5">
+                    <BentoTile title="AI Verdict & Strategic Path" icon={Sparkles} className="md:col-span-3 bg-indigo-600/5 dark:bg-indigo-400/5">
                         <p className="text-sm font-medium leading-relaxed mb-4 text-slate-700 dark:text-slate-300">
                             {outcome.insights.summary}
                         </p>
