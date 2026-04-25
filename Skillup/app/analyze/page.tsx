@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Upload, FileText, ChevronRight, Check } from 'lucide-react'
+import { allSkills } from '@/lib/data'
 
 const analysisSteps = [
   { icon: Brain, label: 'Analyzing your skills', duration: 1500 },
@@ -54,7 +55,13 @@ export default function AnalyzePage() {
   }, [userSkillsData])
 
   const runAnalysis = async () => {
-    if (!jobRole || !userSkillsData || userSkillsData.skills.length === 0) return
+    if (!jobRole || !userSkillsData) return
+    // Allow proceeding if either manual skills are selected OR a resume is provided
+    if (userSkillsData.skills.length === 0 && !resumeInput) {
+        setError("Please provide your skills or upload a resume to proceed.")
+        return
+    }
+    
     if (analysisStarted.current) return
 
     // Credit logic enforcement
@@ -67,6 +74,7 @@ export default function AnalyzePage() {
       return
     }
 
+    setError(null)
     setPhase('analyzing')
     analysisStarted.current = true
 
@@ -94,6 +102,7 @@ export default function AnalyzePage() {
         roleLevel: jobRole.roleLevel as any,
         experienceYears: mapLevelToYears(jobRole.roleLevel, jobRole.experienceRange),
         resumeText: resumeInput,
+        targetRoleSkills: [...(jobRole.coreSkills || []), ...(jobRole.bonusSkills || [])],
       })
 
       // Map backend response to frontend types
@@ -104,6 +113,8 @@ export default function AnalyzePage() {
         jobRole.roleLevel as RoleLevel,
         resumeInput
       )
+
+      console.log("ML Backend Success - Analysis Result:", analysisResult)
 
       // Save analysis to Convex
       const { id, userId, createdAt, ...analysisData } = analysisResult
@@ -126,17 +137,41 @@ export default function AnalyzePage() {
         console.error("Credit consumption failed or out of credits", e)
       }
 
-      router.push('/dashboard')
+      // Ensure the redirect happens after a small delay to allow Convex indices to update
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      window.location.href = '/dashboard'
     } catch (error) {
       console.error('ML Backend error, falling back to client-side analysis:', error)
       setUsingFallback(true)
+      setError(error instanceof Error ? error.message : 'Analysis failed. Falling back to local scoring.')
+
+      // Combine selected skills with skills found in resume for the fallback logic
+      const allPossibleSkills = [...allSkills]
+      const extractedSkillsFromResume = allPossibleSkills.filter(skill => {
+        const s = skill.toLowerCase()
+        const r = resumeInput.toLowerCase()
+        // Match exact word or common variations
+        return r.includes(s) || 
+               (s === 'node.js' && r.includes('node')) ||
+               (s === 'react' && r.includes('reactjs')) ||
+               (s === 'tailwind css' && r.includes('tailwind'))
+      })
+      
+      const mergedSkills = Array.from(new Set([...userSkills, ...extractedSkillsFromResume]))
+      console.log("Fallback Analysis - Merged Skills:", mergedSkills)
+      console.log("Fallback Analysis - Job Role Skills:", { 
+        core: jobRole.coreSkills, 
+        bonus: jobRole.bonusSkills 
+      })
 
       // Fallback to client-side analysis
       const { score, matchedCore, matchedBonus, missingCore, missingBonus } = calculateReadinessScore(
-        userSkills,
+        mergedSkills,
         jobRole.coreSkills || [],
         jobRole.bonusSkills || []
       )
+
+      console.log("Fallback Analysis - Results:", { score, matchedCore, missingCore })
 
       const status = getReadinessStatus(score)
       const resumeFitScore = calculateResumeFitScore(
@@ -179,10 +214,12 @@ export default function AnalyzePage() {
         missingSkills: [...missingCore, ...missingBonus],
         resumeFitScore,
         scoreBreakdown,
+        resumeText: resumeInput,
       })
 
+      console.log("Fallback Analysis - Saving ID:", analysisId)
+
       // Smart roadmap generation for fallback
-      // Curated fallback resources for common skills
       const FALLBACK_RESOURCES: Record<string, { courses: { title: string; platform: string; url: string; duration: string; reason?: string }[]; playlists: { title: string; channel: string; url: string; videos: number; reason?: string }[] }> = {
         'react': {
           courses: [{ title: 'React - The Complete Guide', platform: 'Udemy', url: 'https://www.udemy.com/course/react-the-complete-guide-incl-redux/', duration: '48 hours' }],
@@ -228,12 +265,10 @@ export default function AnalyzePage() {
         youtubePlaylists: [] as typeof FALLBACK_RESOURCES[string]['playlists'],
       }))
 
-      // Round-robin distribution
       missingSkillsList.forEach((skill, idx) => {
         weeks[idx % weekCount]._skills.push(skill)
       })
 
-      // Populate focusSkill and resources
       weeks.forEach(week => {
         week.focusSkill = week._skills[0] || 'Consolidation & Projects'
         week._skills.forEach(skill => {
@@ -242,7 +277,6 @@ export default function AnalyzePage() {
             week.courses.push(...res.courses)
             week.youtubePlaylists.push(...res.playlists)
           } else {
-            // Generate a search-based fallback resource
             week.courses.push({
               title: `Learn ${skill}`,
               platform: 'Google',
@@ -254,7 +288,6 @@ export default function AnalyzePage() {
         })
       })
 
-      // Convert to Convex-compatible format (remove _skills helper)
       const cleanWeeks = weeks.map(({ _skills, ...w }) => w)
 
       await saveRoadmap({
@@ -262,22 +295,21 @@ export default function AnalyzePage() {
         weeks: cleanWeeks,
       })
 
-      // Consume credit in fallback too
       try {
         await useCredit()
       } catch (e) {
         console.warn("Credit logic failed or already processed")
       }
 
-      // Wait a bit to show error, then redirect
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      router.push('/dashboard')
+      // Ensure the redirect happens after a small delay to allow Convex indices to update
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      window.location.href = '/dashboard' // Hard redirect to force fresh state
     }
   }
 
   useEffect(() => {
     if (jobRole === undefined || userSkillsData === undefined) return
-    if (!jobRole || !userSkillsData || userSkillsData.skills.length === 0) {
+    if (!jobRole || !userSkillsData) {
       router.push('/onboarding/role')
       return
     }
@@ -354,16 +386,12 @@ export default function AnalyzePage() {
                             setFileName(file.name)
                             setIsProcessingFile(true)
 
-                            // Simulate processing delay for "premium" feel
                             await new Promise(resolve => setTimeout(resolve, 1500))
 
-                            // For .txt files we can read directly
                             if (file.type === "text/plain" || file.name.endsWith(".txt")) {
                               const text = await file.text()
                               setResumeInput(text)
                             } else {
-                              // For PDF/DOCX we'd normally need a parser
-                              // Enhance mock text to simulate "real" extraction for the AI model
                               setResumeInput(`[SIMULATED EXTRACTION FROM ${file.name}]\nThis document contains professional details. The AI model will scan the binary content for skills like Javascript, React, Node, and more.`)
                             }
                             setIsProcessingFile(false)
@@ -434,7 +462,6 @@ export default function AnalyzePage() {
             </div>
             <CardContent className="p-8">
               <div className="text-center space-y-6">
-                {/* Animated Icon */}
                 <div className="relative w-24 h-24 mx-auto">
                   <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
                   <div className="relative w-24 h-24 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -442,7 +469,6 @@ export default function AnalyzePage() {
                   </div>
                 </div>
 
-                {/* Title */}
                 <div className="space-y-1">
                   <h2 className="text-2xl font-bold text-foreground">
                     Deep Analysis
@@ -452,7 +478,6 @@ export default function AnalyzePage() {
                   </p>
                 </div>
 
-                {/* Progress Detail */}
                 <div className="space-y-4 pt-4">
                   {analysisSteps.map((step, index) => {
                     const Icon = step.icon

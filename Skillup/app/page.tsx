@@ -139,7 +139,7 @@ export default function LandingPage() {
                   className="px-10 h-14 text-base font-semibold rounded-full group"
                   pulseColor="var(--primary)"
                 >
-                  <div className="flex items-center gap-2 text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.7)] font-bold">
+                  <div className="flex items-center gap-2 text-foreground dark:text-emerald-900 drop-shadow-[0_0_20px_rgba(0,0,0,0.1)] font-bold">
                     Get Started
                     <ChevronRight className="w-5 h-5" />
                   </div>
@@ -154,7 +154,7 @@ export default function LandingPage() {
               { value: 50, suffix: '+', label: 'Job Roles' },
               { value: 200, suffix: '+', label: 'Skills Tracked', stiffness: 20, damping: 10 },
               { value: '30-Day', label: 'Roadmaps', isStatic: true },
-              { value: 100, suffix: '%', label: 'Free to Use' },
+              { value: 'ATS', label: 'Friendly Resume', isStatic: true },
             ].map((stat) => (
               <div key={stat.label} className="text-center p-8 rounded-2xl bg-card border border-primary/10 shadow-lg hover:shadow-xl hover:bg-card/80 transition-all cursor-default">
                 <div className="text-4xl md:text-5xl font-black text-primary mb-2 whitespace-nowrap">
@@ -351,29 +351,6 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-      {/* CTA Section */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-primary/5 backdrop-blur-3xl" />
-        <div className="absolute bottom-0 w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-black text-foreground mb-6 tracking-tight">
-              Ready to Accelerate Your Career?
-            </h2>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-3xl mx-auto">
-              Join thousands of professionals who have used Skillup to identify their skill gaps and create a clear path to success.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/login">
-                <Button size="lg" className="gap-2 px-8 bg-foreground text-background hover:bg-foreground/90 rounded-full shadow-lg hover:shadow-xl transition-all">
-                  Start Your Analysis
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
           </div>
         </div>
       </section>

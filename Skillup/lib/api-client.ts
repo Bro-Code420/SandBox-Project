@@ -16,6 +16,17 @@ export class MLBackendError extends Error {
 }
 
 /**
+ * Map frontend domain IDs to ML backend role IDs
+ */
+const DOMAIN_MAP: Record<string, string> = {
+  'frontend': 'frontend_developer',
+  'backend': 'backend_developer',
+  'fullstack': 'fullstack_developer',
+  'data': 'data_scientist',
+  'devops': 'devops_engineer',
+};
+
+/**
  * Wrapper for the /analyze endpoint that handles frontend -> backend key mapping
  */
 export async function analyzeWithFrontendTypes(data: {
@@ -25,18 +36,20 @@ export async function analyzeWithFrontendTypes(data: {
   roleLevel: 'intern' | 'junior' | 'mid' | 'senior';
   experienceYears: number;
   resumeText: string;
+  targetRoleSkills?: string[];
 }): Promise<MLAnalyzeResponse> {
   try {
     const requestData: MLAnalyzeRequest = {
       candidate_id: data.userId,
       skills: data.skills,
       resume_text: data.resumeText,
-      role_id: data.domain,
+      role_id: DOMAIN_MAP[data.domain] || data.domain,
       level: data.roleLevel,
       experience_years: data.experienceYears,
+      target_role_skills: data.targetRoleSkills,
     };
 
-    const response = await api.post<MLAnalyzeResponse>('/analyze', requestData);
+    const response = await api.post<MLAnalyzeResponse>('/inference/analyze', requestData);
     return response.data;
   } catch (error: any) {
     throw new MLBackendError(

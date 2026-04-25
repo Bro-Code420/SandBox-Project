@@ -92,18 +92,35 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 w-full max-w-[1600px] mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          Career Readiness Dashboard
-          {(currentAnalysis as any).isLive && (
-            <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px] uppercase font-bold tracking-tighter">
-              LIVE PROGRESS ACTIVE
-            </Badge>
-          )}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Role: {currentAnalysis.roleSnapshot.title}
-        </p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            Career Readiness Dashboard
+            {(currentAnalysis as any).isLive && (
+              <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5 text-[10px] uppercase font-bold tracking-tighter">
+                LIVE PROGRESS ACTIVE
+              </Badge>
+            )}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Role: {currentAnalysis.roleSnapshot.title}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-success/5 border border-success/10 text-success text-[10px] font-bold uppercase tracking-wider">
+            <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+            Live Sync Connected
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-full h-8 px-4 text-xs font-medium border-primary/10 hover:bg-primary/5 gap-2"
+            onClick={() => window.location.reload()}
+          >
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            Force Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Main Stats Grid */}
