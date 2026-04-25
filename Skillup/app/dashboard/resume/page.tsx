@@ -5,24 +5,33 @@ import { useQuery, useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useUser } from '@clerk/nextjs'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FileText, Download, Save, CheckCircle2, User, Mail, Phone, MapPin, Briefcase, GraduationCap, LayoutTemplate } from 'lucide-react'
+import { FileText, Download, Save, CheckCircle2, User, Mail, Phone, MapPin, Briefcase, GraduationCap, Sparkles, AlertCircle, TrendingUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Badge } from '@/components/ui/badge'
 
 export default function ResumeBuilderPage() {
     const { user } = useUser()
     const latestAnalysis = useQuery(api.analysis.getLatestAnalysis)
     const userProfile = useQuery(api.users.getProfile)
     const savedResume = useQuery(api.resume.getResume, user ? { userId: user.id } : "skip")
+    
     const saveResumeMutation = useMutation(api.resume.saveResume)
+    const optimizeResumeMutation = useMutation(api.resume.optimizeResume)
 
     const [isEditing, setIsEditing] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
+    const [isOptimizing, setIsOptimizing] = useState(false)
+    const [jobDescription, setJobDescription] = useState("")
+    const [targetRoleVariant, setTargetRoleVariant] = useState("Software Engineer")
+    
+    const [insights, setInsights] = useState<any>(null)
+    
     const [resumeData, setResumeData] = useState({
         fullName: '',
         email: '',
@@ -52,6 +61,7 @@ export default function ResumeBuilderPage() {
                 education: `University Name\nB.S. in Computer Science\n2018 - 2022`,
                 template: 'modern'
             }))
+            setTargetRoleVariant(latestAnalysis.roleSnapshot.title)
         }
     }, [savedResume, user, latestAnalysis])
 
@@ -100,6 +110,38 @@ export default function ResumeBuilderPage() {
         }
     }
 
+    const handleOptimize = async () => {
+        setIsOptimizing(true)
+        toast("Analyzing resume...", { description: "Applying AI optimizations and calculating ATS score." })
+        try {
+            // First save current state so optimization runs on latest text
+            await saveResumeMutation({
+                userId: user.id,
+                ...resumeData
+            })
+
+            const result = await optimizeResumeMutation({
+                userId: user.id,
+                jobDescription,
+                targetRole: targetRoleVariant
+            })
+
+            setResumeData(prev => ({
+                ...prev,
+                summary: result.optimized_resume.summary,
+                experience: result.optimized_resume.experience,
+            }))
+            
+            setInsights(result.ats_analysis)
+            
+            toast.success(`Optimization complete! ATS Score: ${result.ats_analysis.ats_score}%`)
+        } catch (error) {
+            toast.error("Failed to optimize resume.")
+        } finally {
+            setIsOptimizing(false)
+        }
+    }
+
     // Template specific classes
     const getTemplateStyles = () => {
         switch(resumeData.template) {
@@ -111,7 +153,7 @@ export default function ResumeBuilderPage() {
                     title: "text-lg italic mt-1",
                     contact: "justify-center mt-2",
                     sectionTitle: "text-lg font-bold uppercase border-b border-black pb-1 mb-3 mt-6",
-                    iconClass: "hidden" // Classic often doesn't use icons
+                    iconClass: "hidden"
                 };
             case 'minimalist':
                 return {
@@ -164,10 +206,10 @@ export default function ResumeBuilderPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                        <FileText className="w-8 h-8 text-primary" /> Resume Builder
+                        <FileText className="w-8 h-8 text-primary" /> Resume Optimization Engine
                     </h1>
                     <p className="text-muted-foreground mt-2">
-                        Edit and generate an ATS-friendly resume anytime.
+                        AI-powered resume builder tailored to real industry readiness.
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -177,6 +219,9 @@ export default function ResumeBuilderPage() {
                     <Button onClick={handleSave} disabled={isSaving} variant="secondary">
                         <Save className="w-4 h-4 mr-2" /> {isSaving ? "Saving..." : "Save Resume"}
                     </Button>
+                    <Button onClick={handleOptimize} disabled={isOptimizing} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                        <Sparkles className="w-4 h-4 mr-2" /> {isOptimizing ? "Optimizing..." : "AI Optimize"}
+                    </Button>
                     <Button onClick={handlePrint} className="bg-primary text-primary-foreground shadow-md">
                         <Download className="w-4 h-4 mr-2" /> Download PDF
                     </Button>
@@ -184,71 +229,123 @@ export default function ResumeBuilderPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {isEditing && (
-                    <Card className="lg:col-span-1 border-primary/20 shadow-md no-print h-max sticky top-24">
-                        <CardHeader className="bg-muted/30 border-b">
-                            <CardTitle className="text-xl">Resume Editor</CardTitle>
-                            <CardDescription>All changes are auto-previewed.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4 p-6">
-                            <div className="space-y-2">
-                                <Label>Template</Label>
-                                <Select value={resumeData.template} onValueChange={(val) => setResumeData({...resumeData, template: val})}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select template" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="modern">Modern</SelectItem>
-                                        <SelectItem value="minimalist">Minimalist</SelectItem>
-                                        <SelectItem value="classic">Classic (Best for ATS)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Full Name</Label>
-                                <Input value={resumeData.fullName} onChange={e => setResumeData({...resumeData, fullName: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Email</Label>
-                                <Input value={resumeData.email} onChange={e => setResumeData({...resumeData, email: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Phone</Label>
-                                <Input placeholder="+1 (555) 000-0000" value={resumeData.phone} onChange={e => setResumeData({...resumeData, phone: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Location</Label>
-                                <Input placeholder="City, Country" value={resumeData.location} onChange={e => setResumeData({...resumeData, location: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Professional Summary</Label>
-                                <Textarea 
-                                    className="min-h-[100px] text-xs" 
-                                    value={resumeData.summary} 
-                                    onChange={e => setResumeData({...resumeData, summary: e.target.value})} 
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Experience (Use markdown or plain text)</Label>
-                                <Textarea 
-                                    className="min-h-[150px] text-xs" 
-                                    value={resumeData.experience} 
-                                    onChange={e => setResumeData({...resumeData, experience: e.target.value})} 
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Education</Label>
-                                <Textarea 
-                                    className="min-h-[80px] text-xs" 
-                                    value={resumeData.education} 
-                                    onChange={e => setResumeData({...resumeData, education: e.target.value})} 
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
+                <div className="lg:col-span-1 space-y-6 no-print">
+                    
+                    {insights && (
+                        <Card className="border-indigo-200 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-sm">
+                            <CardHeader className="pb-3 border-b border-indigo-100 dark:border-indigo-900">
+                                <CardTitle className="text-lg flex items-center gap-2 text-indigo-700 dark:text-indigo-400">
+                                    <TrendingUp className="w-5 h-5" /> ATS Score: {insights.ats_score}%
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-4 text-sm">
+                                <div>
+                                    <p className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-1 mb-1"><CheckCircle2 className="w-4 h-4"/> Strengths</p>
+                                    <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                                        {insights.strengths.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                                    </ul>
+                                </div>
+                                {insights.weaknesses.length > 0 && (
+                                    <div>
+                                        <p className="font-semibold text-red-700 dark:text-red-400 flex items-center gap-1 mb-1"><AlertCircle className="w-4 h-4"/> Weaknesses</p>
+                                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                                            {insights.weaknesses.map((w: string, i: number) => <li key={i}>{w}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                {insights.missing_keywords.length > 0 && (
+                                    <div>
+                                        <p className="font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1 mb-1">Missing Keywords</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {insights.missing_keywords.map((k: string, i: number) => (
+                                                <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800" key={i}>{k}</Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
 
-                <div className={`transition-all duration-300 ${isEditing ? 'lg:col-span-2' : 'lg:col-span-3 max-w-4xl mx-auto w-full'}`}>
+                    {isEditing && (
+                        <Card className="border-primary/20 shadow-md">
+                            <CardHeader className="bg-muted/30 border-b">
+                                <CardTitle className="text-xl">Resume Editor</CardTitle>
+                                <CardDescription>Update details or let AI generate them.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4 p-6">
+                                <div className="space-y-2">
+                                    <Label>Template</Label>
+                                    <Select value={resumeData.template} onValueChange={(val) => setResumeData({...resumeData, template: val})}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select template" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="modern">Modern</SelectItem>
+                                            <SelectItem value="minimalist">Minimalist</SelectItem>
+                                            <SelectItem value="classic">Classic (Best for ATS)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2"><Sparkles className="w-3 h-3 text-indigo-500" /> Target Role Variant</Label>
+                                    <Input value={targetRoleVariant} onChange={e => setTargetRoleVariant(e.target.value)} placeholder="Frontend, Backend, Fullstack..." />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2"><Sparkles className="w-3 h-3 text-indigo-500" /> Job Description (Optional)</Label>
+                                    <Textarea 
+                                        className="text-xs min-h-[60px]" 
+                                        placeholder="Paste job description to tailor your resume..." 
+                                        value={jobDescription} 
+                                        onChange={e => setJobDescription(e.target.value)} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Full Name</Label>
+                                    <Input value={resumeData.fullName} onChange={e => setResumeData({...resumeData, fullName: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Email</Label>
+                                    <Input value={resumeData.email} onChange={e => setResumeData({...resumeData, email: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Phone</Label>
+                                    <Input placeholder="+1 (555) 000-0000" value={resumeData.phone} onChange={e => setResumeData({...resumeData, phone: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Location</Label>
+                                    <Input placeholder="City, Country" value={resumeData.location} onChange={e => setResumeData({...resumeData, location: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Professional Summary</Label>
+                                    <Textarea 
+                                        className="min-h-[100px] text-xs" 
+                                        value={resumeData.summary} 
+                                        onChange={e => setResumeData({...resumeData, summary: e.target.value})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Experience (Use markdown or plain text)</Label>
+                                    <Textarea 
+                                        className="min-h-[150px] text-xs" 
+                                        value={resumeData.experience} 
+                                        onChange={e => setResumeData({...resumeData, experience: e.target.value})} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Education</Label>
+                                    <Textarea 
+                                        className="min-h-[80px] text-xs" 
+                                        value={resumeData.education} 
+                                        onChange={e => setResumeData({...resumeData, education: e.target.value})} 
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+
+                <div className={`transition-all duration-300 ${isEditing || insights ? 'lg:col-span-2' : 'lg:col-span-3 max-w-4xl mx-auto w-full'}`}>
                     <Card className="shadow-2xl overflow-hidden border-border print-section bg-white min-h-[1122px] w-full" ref={printRef}>
                         <div className={`p-8 md:p-12 ${styles.container}`}>
                             
@@ -258,7 +355,7 @@ export default function ResumeBuilderPage() {
                                     {resumeData.fullName || "Your Name"}
                                 </h1>
                                 <h2 className={styles.title}>
-                                    {latestAnalysis.roleSnapshot.title}
+                                    {targetRoleVariant}
                                 </h2>
                                 <div className={`flex flex-wrap gap-x-6 gap-y-2 text-sm ${resumeData.template === 'classic' ? 'text-black' : 'text-gray-600'} ${styles.contact}`}>
                                     <div className="flex items-center gap-1.5">
