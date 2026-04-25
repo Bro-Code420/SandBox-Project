@@ -21,7 +21,7 @@ import { ListSkeleton } from '@/components/dashboard/content-skeletons'
 import { skillDependencies } from '@/lib/data'
 
 export default function GapsPage() {
-  const currentAnalysis = useQuery(api.analysis.getLatestAnalysis)
+  const currentAnalysis = useQuery(api.analysis.getLiveProfile)
   const jobRole = useQuery(api.onboarding.getJobRole)
   const userSkillsData = useQuery(api.onboarding.getUserSkills)
 

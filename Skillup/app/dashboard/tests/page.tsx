@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 export default function DailyChallengePage() {
     const { user } = useUser()
     const latestAnalysis = useQuery(api.analysis.getLatestAnalysis)
+    const liveProfile = useQuery(api.analysis.getLiveProfile)
     const currentRoadmap = useQuery(api.roadmap.getLatestRoadmap)
     const userProgress = useQuery(api.dailyChallenge.getUserProgress, user ? { userId: user.id } : "skip")
     const dailyTests = useQuery(api.dailyChallenge.getDailyTests, user ? { userId: user.id } : "skip")
@@ -182,7 +183,7 @@ export default function DailyChallengePage() {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Readiness Score</p>
-                                <h3 className="text-2xl font-bold">{latestAnalysis?.readinessScore || 0}%</h3>
+                                <h3 className="text-2xl font-bold">{liveProfile?.readinessScore || 0}%</h3>
                             </div>
                         </CardContent>
                     </Card>
